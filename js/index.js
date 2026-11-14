@@ -75,6 +75,32 @@ const elements = {
 
 };
 
+/*
+=================================================
+CLOSE MENU AFTER NAVIGATION
+=================================================
+
+When a user clicks a navigation link,
+automatically close the dropdown.
+*/
+
+const menuToggle = document.getElementById("menu-toggle");
+
+const navigationLinks = document.querySelectorAll(
+  ".main-navigation a"
+);
+
+navigationLinks.forEach(link => {
+
+  link.addEventListener("click", () => {
+
+    // Uncheck the checkbox, which hides the menu.
+    menuToggle.checked = false;
+
+  });
+
+});
+
 
 // =====================================================
 // SECTION 2 - HELPER FUNCTIONS
