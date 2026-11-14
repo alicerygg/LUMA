@@ -77,7 +77,11 @@ const elements = {
   duration: document.getElementById("song-duration"),
 
   // Mood information
-  mood: document.getElementById("song-mood")
+  mood: document.getElementById("song-mood"),
+  moodName: document.querySelector(".mood-name"),
+  moodColor: document.querySelector(".mood-color"),
+  moodEnergy: document.querySelector(".energy"),
+  moodDescription: document.querySelector(".mood-description")
 
 };
 
@@ -293,6 +297,10 @@ async function updateSongMood(song) {
 
   if (!song) {
     elements.mood.textContent = "◌ Mood unavailable";
+    elements.moodName.textContent = "Mood unavailable";
+    elements.moodColor.textContent = "No mood data yet";
+    elements.moodEnergy.textContent = "Waiting for a song";
+    elements.moodDescription.textContent = "Start listening to see an estimated music mood.";
     return;
   }
 
@@ -300,10 +308,21 @@ async function updateSongMood(song) {
     const mood = await getTrackMood(song.artist, song.title);
     const label = mood.estimated_mood ?? "Mood unavailable";
     elements.mood.textContent = `◌ ${label}`;
+    elements.moodName.textContent = label;
+    elements.moodColor.textContent = mood.tags.length
+      ? `Last.fm tags: ${mood.tags.slice(0, 3).join(", ")}`
+      : "No Last.fm tags found";
+    elements.moodEnergy.textContent = "Estimated from community music tags";
+    elements.moodDescription.textContent =
+      "This is an estimated music mood based on Last.fm community tags.";
 
   } catch (error) {
     console.error("Could not load Last.fm mood:", error);
     elements.mood.textContent = "◌ Mood unavailable";
+    elements.moodName.textContent = "Mood unavailable";
+    elements.moodColor.textContent = "Last.fm mood unavailable";
+    elements.moodEnergy.textContent = "Try again with another song";
+    elements.moodDescription.textContent = "We could not retrieve mood tags for this song.";
   }
 }
 
