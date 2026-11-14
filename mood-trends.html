@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Mood Trends in L.U.M.A.">
+    <title>Mood Trends | L.U.M.A.</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="trends-page">
+    <div class="page-shell">
+        <header class="site-header">
+            <div class="header-inner"><a class="site-logo" href="index.html" aria-label="L.U.M.A. home"><span
+                        class="logo-name">L.U.M.A.</span><span class="logo-subtitle">Lifestyle User Mood
+                        Awareness</span></a>
+                <div class="menu-container"><input type="checkbox" id="menu-toggle" class="menu-toggle"
+                        aria-label="Toggle navigation menu"><label for="menu-toggle" class="menu-button"><span
+                            aria-hidden="true">☰</span><span>Menu</span></label>
+                    <nav class="main-navigation" aria-label="Main navigation"><a href="index.html">Overview</a><a
+                            href="listening-history.html">Listening history</a><a href="mood-trends.html"
+                            aria-current="page">Mood trends</a><a href="about.html">About L.U.M.A.</a><a
+                            href="account.html">My Account</a> </nav>
+                </div>
+            </div>
+        </header>
+        <main class="insights-main">
+            <div class="insights-intro">
+                <p class="eyebrow">Your musical moon phases</p>
+                <h1>Your Mood Trends</h1>
+                <p>Explore the emotional tone of your listening over time.</p>
+            </div>
+            <div class="period-tabs" role="tablist" aria-label="Mood trend period"><button class="period-tab" role="tab"
+                    aria-selected="true" data-period="daily">Daily</button><button class="period-tab" role="tab"
+                    aria-selected="false" data-period="weekly">Weekly</button><button class="period-tab" role="tab"
+                    aria-selected="false" data-period="monthly">Monthly</button></div>
+            <section class="insight-panel moon-display" aria-live="polite">
+                <div class="phase-moon" id="trend-moon" role="img"
+                    aria-label="Moon illumination representing mood score"></div>
+                <p class="mood-score" id="trend-score">— / 100</p>
+                <h2 id="trend-heading">Your mood is taking shape</h2>
+                <p class="mood-caption" id="trend-caption">Connect your listening data to see trends.</p>
+            </section>
+            <section class="insight-panel">
+                <h2>A note from L.U.M.A.</h2>
+                <div class="mascot-slot" id="trend-mascot">L.U.M.A. illustration goes here</div>
+            </section>
+            <section class="insight-panel" id="trend-extra">
+                <h2 id="trend-extra-title">Your listening highlights</h2>
+                <div id="trend-highlights">
+                    <p class="muted">Your top artist will appear here once listening data is available.</p>
+                </div>
+                <div id="trend-support" hidden>
+                    <p>Music can be a helpful check-in, but it cannot tell us exactly how you feel. If you'd like
+                        support, consider reaching out.</p>
+                    <ul class="resource-list">
+                        <li>Trusted contact: <span id="support-contact-1">Add a contact</span></li>
+                        <li>Another person you trust: <span id="support-contact-2">Add a contact</span></li>
+                        <li>U.S. 988 Suicide &amp; Crisis Lifeline: <a href="tel:988">Call 988</a> or <a
+                                href="https://988lifeline.org/" target="_blank" rel="noopener noreferrer">visit
+                                988lifeline.org</a></li>
+                    </ul>
+                    <p id="trend-song-recommendation">An uplifting song suggestion will appear here.</p>
+                </div>
+            </section>
+            <section class="insight-panel quote">
+                <p id="trend-quote">“You deserve the same kindness you give to others.”</p>
+            </section>
+        </main>
+    </div>
+    <script type="module" src="js/mood-trends.js"></script>
+</body>
+
+</html>

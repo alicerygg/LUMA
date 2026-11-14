@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Listening History in L.U.M.A.">
+    <title>Listening History | L.U.M.A.</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="history-page">
+    <div class="page-shell">
+        <header class="site-header">
+            <div class="header-inner"><a class="site-logo" href="index.html" aria-label="L.U.M.A. home"><span
+                        class="logo-name">L.U.M.A.</span><span class="logo-subtitle">Lifestyle User Mood
+                        Awareness</span></a>
+                <div class="menu-container"><input type="checkbox" id="menu-toggle" class="menu-toggle"
+                        aria-label="Toggle navigation menu"><label for="menu-toggle" class="menu-button"><span
+                            aria-hidden="true">☰</span><span>Menu</span></label>
+                    <nav class="main-navigation" aria-label="Main navigation"><a href="index.html">Overview</a><a
+                            href="listening-history.html" aria-current="page">Listening history</a><a
+                            href="mood-trends.html">Mood trends</a><a href="about.html">About L.U.M.A.</a><a
+                            href="account.html">My Account</a> </nav>
+                </div>
+            </div>
+        </header>
+        <main class="insights-main">
+            <div class="insights-intro">
+                <p class="eyebrow">Your soundtrack, remembered</p>
+                <h1>Listening History</h1>
+                <p>A monthly look at the music you've spent time with.</p>
+            </div>
+            <div class="insight-columns">
+                <section class="insight-panel">
+                    <p class="insight-label">Average monthly mood</p>
+                    <p class="insight-stat" id="history-average">— / 100</p>
+                    <h2 id="history-mood-heading">Your listening mood</h2>
+                    <p class="muted">Based on classified tracks this month.</p>
+                </section>
+                <section class="insight-panel">
+                    <h2>A visit from L.U.M.A.</h2>
+                    <div class="mascot-slot" id="history-mascot">L.U.M.A. illustration goes here</div>
+                </section>
+            </div>
+            <section class="insight-panel">
+                <p class="insight-label">Most listened-to song this month</p>
+                <div class="feature-row">
+                    <div class="art-placeholder" id="history-album-art" aria-label="Album artwork placeholder">♫</div>
+                    <div>
+                        <h2 id="history-song-title">No listening history yet</h2>
+                        <p id="history-song-artist">Connect your listening history to see your favourite track.</p>
+                        <p id="history-song-mood" class="muted">Mood: —</p>
+                        <p id="history-song-plays" class="muted">Plays: —</p>
+                    </div>
+                </div>
+            </section>
+            <section class="insight-panel">
+                <p class="insight-label">Favourite artist this month</p>
+                <h2 id="history-top-artist">Waiting for listening data</h2>
+                <p id="history-artist-details" class="muted">Your most-played artist will appear here.</p>
+            </section>
+            <section class="insight-panel">
+                <h2>Your listening illustration</h2>
+                <div class="mascot-slot" id="history-bottom-image">Space for a monthly recap illustration</div>
+            </section>
+        </main>
+    </div>
+    <script type="module" src="js/listening-history.js"></script>
+</body>
+
+</html>
