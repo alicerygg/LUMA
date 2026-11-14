@@ -42,6 +42,9 @@ create table if not exists public.track_moods (
   title text not null,
   tags text[] not null default '{}',
   estimated_mood text,
+  valence double precision,
+  energy double precision,
+  confidence double precision not null default 0,
   source text not null,
   fetched_at timestamptz not null default now()
 );
