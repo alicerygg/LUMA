@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Manage your L.U.M.A. profile, connected services, family settings, and support options."
+    />
+    <title>L.U.M.A. | My Account</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+
+  <body>
+    <div class="page-shell">
+      <!-- Header and mobile navigation control. -->
+      <header class="site-header">
+        <a class="brand" href="#top" aria-label="L.U.M.A. home">
+          <span class="brand-moon" aria-hidden="true"></span>
+          <span>
+            <span class="brand-name">L.U.M.A.</span>
+            <span class="brand-subtitle">Lifestyle User Mood Awareness</span>
+          </span>
+        </a>
+
+        <button class="menu-button" type="button" aria-label="Open navigation menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </header>
+
+      <!-- This navigation matches the dashboard page's primary navigation. -->
+      <nav id="main-navigation" class="main-navigation" aria-label="Main navigation">
+        <a href="#overview">Overview</a>
+        <a href="#listening-history">Listening history</a>
+        <a href="#mood-trends">Mood trends</a>
+        <a href="#settings" aria-current="page">Settings</a>
+      </nav>
+
+      <main id="top">
+        <!-- Introductory account heading. -->
+        <section class="account-intro" aria-labelledby="account-title">
+          <p class="eyebrow">MY ACCOUNT</p>
+          <h1 id="account-title">My Account</h1>
+          <p>Your L.U.M.A. profile and settings.</p>
+          <div class="intro-moon" aria-hidden="true">
+            <span class="star star-one">✦</span>
+            <span class="star star-two">✦</span>
+            <span class="crescent"></span>
+          </div>
+        </section>
+
+        <!-- Profile sprite and editable display name. -->
+        <section class="profile-section" aria-labelledby="profile-heading">
+          <h2 id="profile-heading" class="visually-hidden">Profile</h2>
+
+          <div class="luma-sprite" role="img" aria-label="L.U.M.A. profile sprite">
+            <div class="sprite-stars">✦</div>
+            <div class="sprite-head"></div>
+            <div class="sprite-body"></div>
+            <div class="sprite-moon">☾</div>
+          </div>
+
+          <div class="name-field">
+            <label for="display-name">Name</label>
+            <div class="input-with-icon">
+              <input id="display-name" type="text" value="Alex Morgan" />
+              <span class="edit-icon" aria-hidden="true">⌕</span>
+            </div>
+          </div>
+        </section>
+
+        <div class="account-cards">
+          <!-- Account type card. -->
+          <section class="account-card account-type-card" aria-labelledby="account-type-title">
+            <div class="card-icon person-icon" aria-hidden="true"></div>
+            <div class="card-content">
+              <h2 id="account-type-title">Account type</h2>
+              <p>Standard account</p>
+            </div>
+          </section>
+
+          <!-- Spotify connection card. -->
+          <section class="account-card spotify-card" aria-labelledby="spotify-title">
+            <div class="card-icon spotify-icon" aria-hidden="true">●</div>
+            <div class="card-content">
+              <h2 id="spotify-title">Connected Spotify</h2>
+              <p class="connection-status"><span></span>Connected</p>
+            </div>
+            <a class="card-action-button" href="#spotify-settings">Manage connection</a>
+          </section>
+
+          <!-- Family and child account settings. -->
+          <section class="account-card children-card" aria-labelledby="children-title">
+            <div class="card-heading">
+              <div class="card-icon family-icon" aria-hidden="true"></div>
+              <div class="card-content">
+                <h2 id="children-title">Children (under 18)</h2>
+                <p>Manage children linked to your account.</p>
+              </div>
+            </div>
+            <a class="list-action" href="#children-settings">
+              <span>Manage children</span>
+              <span aria-hidden="true">›</span>
+            </a>
+          </section>
+
+          <!-- Help and support contacts. -->
+          <section class="account-card help-card" aria-labelledby="help-title">
+            <div class="card-heading">
+              <div class="card-icon headset-icon" aria-hidden="true"></div>
+              <div class="card-content">
+                <h2 id="help-title">Help &amp; support</h2>
+              </div>
+            </div>
+
+            <nav class="help-links" aria-label="Help and support">
+              <a class="list-action" href="#help-center">
+                <span><span class="small-link-icon">▢</span>Help center</span>
+                <span aria-hidden="true">›</span>
+              </a>
+              <a class="list-action" href="#contact-support">
+                <span><span class="small-link-icon">✉</span>Contact support</span>
+                <span aria-hidden="true">›</span>
+              </a>
+              <a class="list-action" href="#privacy-safety">
+                <span><span class="small-link-icon">♡</span>Privacy &amp; safety</span>
+                <span aria-hidden="true">›</span>
+              </a>
+            </nav>
+          </section>
+        </div>
+
+        <a class="logout-button" href="#logout">
+          <span class="logout-icon" aria-hidden="true">↪</span>
+          Log out
+        </a>
+      </main>
+
+      <!-- Persistent mobile navigation. -->
+      <footer class="site-footer">
+        <nav class="bottom-navigation" aria-label="Primary navigation">
+          <a href="#overview"><span class="nav-icon">⌂</span><span>Overview</span></a>
+          <a href="#listening-history"><span class="nav-icon">◷</span><span>Listening history</span></a>
+          <a href="#mood-trends"><span class="nav-icon mood-icon" aria-hidden="true">☺</span><span>Mood trends</span></a>
+          <a class="active" href="#settings" aria-current="page"><span class="nav-icon settings-icon" aria-hidden="true">⚙</span><span>Settings</span></a>
+        </nav>
+      </footer>
+    </div>
+  </body>
+</html>
