@@ -1,261 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>L.U.M.A. — Lifestyle User Mood Awareness</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to L.U.M.A.</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
-  <header class="site-header" id="top">
-    <!--
-        HEADER NAVIGATION
+<body class="auth-page">
+    <div class="page-shell">
 
-        The logo stays on the left.
-        The hamburger menu stays on the right.
-
-        The same menu works on mobile and desktop.
-    -->
-    <div class="header-inner">
-
-        <!-- LUMA logo -->
-        <a class="site-logo" href="#top" aria-label="L.U.M.A. home">
-        <span class="logo-name">L.U.M.A.</span>
-        <span class="logo-subtitle">
-            Lifestyle User Mood Awareness
-        </span>
-        </a>
-
-        <!-- Menu container -->
-        <div class="menu-container">
-
-        <!--
-            Hidden checkbox controls whether the menu is open.
-
-            The label below toggles this checkbox when clicked.
-            No JavaScript is required for opening and closing.
-        -->
-        <input
-            type="checkbox"
-            id="menu-toggle"
-            class="menu-toggle"
-        >
-
-        <!-- Hamburger button -->
-        <label for="menu-toggle" class="menu-button">
-            <span aria-hidden="true">☰</span>
-            <span>Menu</span>
-        </label>
-
-        <!-- Dropdown navigation -->
-        <nav class="main-navigation" aria-label="Main navigation">
-
-            <a href="#overview">Overview</a>
-
-            <a href="#listening-history">Listening history</a>
-
-            <a href="#mood-trends">Mood trends</a>
-
-            <a href="#settings">Settings</a>
-
-            <!--
-            Spotify connection button.
-
-            IMPORTANT:
-            Keep this ID because index.js uses it
-            to handle Spotify authentication.
-            -->
-            <button
-            id="spotify-login-button"
-            type="button"
-            >
-            Connect Spotify
-            </button>
-
-            <!-- Updated by index.js -->
-            <p
-            id="spotify-connection-status"
-            role="status"
-            >
-            Spotify not connected
-            </p>
-
-        </nav>
-
-        </div>
-
-    </div>
-
-    <div class="hero-content">
-      <p class="eyebrow">Your space to slow down</p>
-      <h1>A little pause.<br>A little moonlight.</h1>
-      <p class="hero-copy">Welcome back, Luna. Let's make room for how you feel.</p>
-      <p class="hero-note">Every phase of you belongs here.</p>
-    </div>
-
-    <div class="moon" aria-hidden="true"></div>
-    <span class="star star-one" aria-hidden="true">✦</span>
-    <span class="star star-two" aria-hidden="true">✦</span>
-  </header>
-
-  <main id="overview">
-    <div class="dashboard-grid">
-      <section class="dashboard-card song-card" id="listening-history">
-
-        <p class="card-label">Your orbit, on repeat</p>
-
-        <!--
-            ALBUM ART
-
-            Spotify provides an image URL for the current album.
-            JavaScript will update this image automatically.
-        -->
-        <div class="album-art">
-            <img
-            id="album-art-image"
-            src=""
-            alt="Current album cover"
-            style="display: none;"
-            >
-        </div>
-
-        <!--
-            SONG INFORMATION
-
-            Each dynamic element has an ID.
-
-            index.js uses these IDs to find and update
-            the appropriate HTML elements.
-        -->
-        <div class="song-details">
-
-            <p class="now-playing" id="playback-status">
-            Not connected
-            </p>
-
-            <h2 class="song-title" id="song-title">
-            Connect Spotify
-            </h2>
-
-            <p class="artist" id="song-artist">
-            Your music will appear here
-            </p>
-
-            <p class="album" id="song-album">
-            Waiting for Spotify...
-            </p>
-
-            <!--
-            Mood classification will eventually be supplied
-            by your teammate's classification system.
-            -->
-            <span class="mood-tag" id="song-mood">
-            
-            </span>
-
-        </div>
-
-        <!--
-            PLAYBACK PROGRESS
-
-            Spotify provides:
-            progress_ms
-            duration_ms
-
-            index.js converts these into readable timestamps
-            and updates the progress bar.
-        -->
-        <div class="progress-area">
-
-             <!-- Grey background track: always stays full width -->
-            <div
-                class="progress-bar"
-                role="progressbar"
-                aria-label="Song progress"
-                aria-valuemin="0"
-                aria-valuemax="100"
-                aria-valuenow="0"
-            >
-
-                <!-- Yellow fill: JavaScript changes this width -->
-                <div class="progress-fill" id="song-progress"></div>
-
+        <header class="site-header">
+            <div class="header-inner">
+                <a class="site-logo" href="index.html">
+                    <span class="logo-name">L.U.M.A.</span>
+                    <span class="logo-subtitle">
+                        Lifestyle User Mood Awareness
+                    </span>
+                </a>
+                <a href="about.html">About L.U.M.A.</a>
             </div>
+        </header>
 
-            <div class="time-row">
-            <span id="song-current-time">0:00</span>
-            <span id="song-duration">0:00</span>
-            </div>
+        <main class="auth-main">
+            <section class="auth-card">
 
-        </div>
+                <div class="auth-moon" aria-hidden="true">☾</div>
 
-        <!--
-            Playback controls require additional Spotify permissions.
+                <p class="eyebrow">WELCOME TO L.U.M.A.</p>
+                <h1>Your music. Your moods. Your moon.</h1>
 
-            We'll leave this disabled until playback control is implemented.
-        -->
-        <button
-            class="pause-button"
-            id="playback-button"
-            type="button"
-            aria-label="Playback control unavailable"
-            disabled
-        >
-            Ⅱ
-        </button>
+                <p class="auth-description">
+                    Discover the patterns in your listening.
+                    Every phase of you belongs here.
+                </p>
 
-      </section>
+                <div class="auth-tabs">
+                    <button type="button" id="login-tab" aria-pressed="true">
+                        Log in
+                    </button>
+                    <button type="button" id="signup-tab" aria-pressed="false">
+                        Sign up
+                    </button>
+                </div>
 
-      <section class="dashboard-card mood-card" id="mood-trends">
-        <p class="card-label">Current song mood</p>
+                <form id="auth-form">
 
-        <div class="mood-summary">
-          <div class="mood-orbit" aria-hidden="true">◒</div>
+                    <div id="signup-fields" hidden>
 
-          <div>
-            <h2 class="mood-name">Reflective</h2>
-            <p class="mood-color">Blue crescent</p>
-            <p class="energy">Low energy · soft intensity</p>
-          </div>
-        </div>
+                        <label for="signup-name">Display name</label>
+                        <input id="signup-name" type="text" maxlength="80" autocomplete="nickname"
+                            placeholder="What should L.U.M.A. call you?">
 
-        <p class="mood-description">
-          Slow tempo and spacious textures give this track a dreamy,
-          inward-looking feel.
-        </p>
+                        <label for="signup-birthday">Date of birth</label>
+                        <input id="signup-birthday" type="date" autocomplete="bday">
 
-        <div class="mood-tag-prompt" id="mood-tag-prompt" hidden>
-          <p>No community tags were found. What mood does this song give you?</p>
-          <input
-            id="custom-mood-input"
-            type="text"
-            maxlength="40"
-            placeholder="e.g. calm, focused, nostalgic"
-          >
-          <button id="save-mood-tag" type="button">Add mood tag</button>
-          <p id="mood-tag-message" role="status"></p>
-        </div>
-      </section>
+                    </div>
+
+                    <label for="auth-email">Email</label>
+                    <input id="auth-email" type="email" autocomplete="email" required>
+
+                    <label for="auth-password">Password</label>
+                    <input id="auth-password" type="password" autocomplete="current-password" minlength="6" required>
+
+                    <button type="submit" id="auth-submit">
+                        Log in
+                    </button>
+                </form>
+
+                <p id="auth-message" role="status" aria-live="polite"></p>
+
+            </section>
+        </main>
+
     </div>
 
-    <section class="recommendations">
-      <h2 class="recommendation-heading">A little lift for your orbit</h2>
-      <p class="recommendation-copy">A gentle shift from reflective to brighter.</p>
-
-      <article class="recommendation-card">
-        <div class="recommendation-art" aria-hidden="true">●</div>
-
-        <div class="recommendation-info">
-          <h3 class="recommendation-title">Put Your Records On</h3>
-          <p class="recommendation-meta">Corinne Bailey Rae · Warm &amp; easygoing</p>
-        </div>
-
-        <button class="play-button" type="button" aria-label="Preview song">▶</button>
-      </article>
-    </section>
-  </main>
-
-  <script type="module" src="./js/index.js"></script>
+    <script type="module" src="./js/auth-page.js"></script>
 </body>
+
 </html>

@@ -43,19 +43,27 @@ import {
     login,
     disconnectSpotify,
     isSpotifyConnected,
-    getCurrentSong
+    getCurrentSong,
+    getSpotifyUser
 } from "./spotify-api.js";
 
 import {
     onSongChanged,
     onPlaybackUpdated,
+    onMoodUpdated,
     startSongMonitoring,
-    stopSongMonitoring
+    stopSongMonitoring,
+    onListeningEvent,
+    startHistoryMonitoring,
+    stopHistoryMonitoring
 } from "./spotify-monitor.js";
 
 import {
-    getTrackMood,
-    saveCurrentTrack
+    saveCurrentTrack,
+    saveMoodTag,
+    saveHistoryEvent,
+    setBackendUser,
+    clearBackendUser
 } from "./backend-api.js";
 
 const elements = {
@@ -297,7 +305,7 @@ function clearSongDisplay() {
  * This listens for song changes instead of every playback update so we do
  * not ask Last.fm repeatedly while the same song is playing.
  */
-async function updateSongMood(song) {
+function updateSongMood(song, mood = null, error = null) {
 
   if (!song) {
     currentMoodTrackKey = null;
@@ -311,17 +319,22 @@ async function updateSongMood(song) {
   }
 
   try {
-    const mood = await getTrackMood(song.artist, song.title);
+    if (error || !mood) {
+        throw error || new Error("Mood classification unavailable");
+    }
+
     const label = mood.estimated_mood ?? "Mood unavailable";
     currentMoodTrackKey = moodStorageKey(song);
+    currentMoodArtist = song.artist;
+    currentMoodTitle = song.title;
     const savedMood = localStorage.getItem(currentMoodTrackKey);
 
     if (!mood.tags.length && savedMood) {
       elements.mood.textContent = `◌ ${savedMood}`;
       elements.moodName.textContent = savedMood;
-      elements.moodColor.textContent = "Your personal mood tag";
-      elements.moodEnergy.textContent = "Added by you";
-      elements.moodDescription.textContent = "This mood was saved privately in L.U.M.A.";
+      elements.moodColor.textContent = "Community mood tag";
+      elements.moodEnergy.textContent = "Shared by a listener";
+      elements.moodDescription.textContent = "This mood tag is shared with L.U.M.A. listeners.";
       showMoodPrompt(false);
       return;
     }
@@ -416,6 +429,8 @@ functions to the existing Spotify system.
 // has an active Spotify connection.
 let spotifyConnected = false;
 let currentMoodTrackKey = null;
+let currentMoodArtist = null;
+let currentMoodTitle = null;
 
 
 function moodStorageKey(song) {
@@ -432,19 +447,26 @@ function showMoodPrompt(show) {
 }
 
 
-function saveUserMoodTag() {
+async function saveUserMoodTag() {
   const tag = elements.moodInput.value.trim();
   if (!tag || !currentMoodTrackKey) {
     elements.moodMessage.textContent = "Enter a mood first.";
     return;
   }
 
-  localStorage.setItem(currentMoodTrackKey, tag);
+  try {
+    await saveMoodTag(currentMoodArtist, currentMoodTitle, tag);
+    localStorage.setItem(currentMoodTrackKey, tag);
+  } catch (error) {
+    console.error("Could not save mood tag:", error);
+    elements.moodMessage.textContent = "Could not save this tag. Try again.";
+    return;
+  }
   elements.mood.textContent = `◌ ${tag}`;
   elements.moodName.textContent = tag;
-  elements.moodColor.textContent = "Your personal mood tag";
-  elements.moodEnergy.textContent = "Added by you";
-  elements.moodDescription.textContent = "This mood was saved privately in L.U.M.A.";
+  elements.moodColor.textContent = "Community mood tag";
+  elements.moodEnergy.textContent = "Shared by a listener";
+  elements.moodDescription.textContent = "This mood tag is shared with L.U.M.A. listeners.";
   showMoodPrompt(false);
 }
 
@@ -456,6 +478,13 @@ function saveUserMoodTag() {
  * connection already exists.
  */
 async function connectHomepage() {
+  // Identify the actual Spotify account.
+    const spotifyUser = await getSpotifyUser();
+
+    // Configure backend requests for this user.
+    setBackendUser(spotifyUser.id);
+
+    console.log("Connected Spotify user:", spotifyUser.id);
 
     // Update the interface immediately.
     spotifyConnected = true;
@@ -465,23 +494,58 @@ async function connectHomepage() {
     // Otherwise we could miss the first song update.
     onPlaybackUpdated((song) => {
 
-        // The Spotify monitor already supplies a
-        // formatted LUMA song object.
         updateSongDisplay(song);
+
+        if (!song) {
+            updateSongMood(null);
+        }
 
     });
 
     // Run once when a different song starts. This saves the song and asks
     // FastAPI for its cached or newly fetched Last.fm mood.
+    // When Spotify detects a different song:
     onSongChanged((song) => {
+
+        // Save the currently playing song.
         void saveCurrentTrack(song).catch((error) => {
             console.error("Could not save current track:", error);
         });
-        void updateSongMood(song);
+
+        // Clear the previous mood while the new one loads.
+        elements.mood.textContent = "◌ Analyzing mood...";
+        elements.moodName.textContent = "Analyzing mood...";
+        elements.moodColor.textContent = "Checking music tags";
+        elements.moodEnergy.textContent = "Please wait";
+        elements.moodDescription.textContent =
+            "L.U.M.A. is estimating the mood of this song.";
+
+        showMoodPrompt(false);
+    });
+
+    // Receive the classification from spotify-monitor.js.
+    // This does NOT make another API request.
+    onMoodUpdated(({ song, mood, error }) => {
+        updateSongMood(song, mood, error);
+    });
+
+    // Store confirmed Spotify listening-history events.
+    // Do not store songChanged events as listening history.
+    onListeningEvent((event) => {
+
+        const { isInitialImport, ...historyEvent } = event;
+
+        void saveHistoryEvent(historyEvent).catch(error => {
+            console.error(
+                "Could not save listening event:",
+                error
+            );
+        });
     });
 
     // Start checking Spotify every 10 seconds.
     startSongMonitoring();
+    startHistoryMonitoring();
 
 }
 
@@ -496,6 +560,8 @@ function disconnectHomepage() {
 
     // Stop future Spotify polling.
     stopSongMonitoring();
+    stopHistoryMonitoring();
+    clearBackendUser();
 
     // Remove saved authentication tokens.
     disconnectSpotify();
@@ -538,7 +604,7 @@ async function initializeHomepage() {
         handleSpotifyButtonClick
     );
 
-    elements.moodSave.addEventListener("click", saveUserMoodTag);
+    elements.moodSave.addEventListener("click", () => void saveUserMoodTag());
 
     // Check whether tokens already exist in storage.
     if (isSpotifyConnected()) {

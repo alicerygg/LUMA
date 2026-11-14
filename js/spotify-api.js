@@ -16,7 +16,11 @@ const REDIRECT_URI =
         : "https://alicerygg.github.io/LUMA/callback.html";
 
 // Spotify permissions: current playback and recently played tracks.
-const SCOPES = ["user-read-currently-playing", "user-read-recently-played"];
+const SCOPES = [
+    "user-read-currently-playing",
+    "user-read-recently-played",
+    "user-read-private"
+];
 
 // All callers share one refresh operation if several requests expire together.
 let refreshPromise = null;
@@ -86,7 +90,39 @@ export function disconnectSpotify() {
     sessionStorage.removeItem("spotify_verifier");
     sessionStorage.removeItem("spotify_state");
 
+    sessionStorage.removeItem("spotify_luma_user_id");
+
 }
+
+
+const SPOTIFY_OWNER_KEY = "spotify_luma_user_id";
+
+/**
+ * Associate the Spotify browser session with
+ * the currently authenticated L.U.M.A. account.
+ */
+export function setSpotifyOwner(userId) {
+    sessionStorage.setItem(SPOTIFY_OWNER_KEY, userId);
+}
+
+/**
+ * Check whether the Spotify session belongs to
+ * the currently authenticated L.U.M.A. account.
+ *
+ * If ownership doesn't match, remove the tokens.
+ */
+export function verifySpotifyOwner(userId) {
+    const storedOwner =
+        sessionStorage.getItem(SPOTIFY_OWNER_KEY);
+
+    if (storedOwner !== userId) {
+        disconnectSpotify();
+        return false;
+    }
+
+    return true;
+}
+
 
 /** Called when the user clicks "Connect Spotify".
  * Stores verifier/state before leaving our page for Spotify's consent screen.
@@ -193,6 +229,18 @@ async function spotifyRequest(endpoint) {
     if (response.status === 204) return null;
     if (!response.ok) throw new Error(`Spotify API error ${response.status}: ${await response.text()}`);
     return response.json();
+}
+
+/**
+ * Retrieve the currently authenticated Spotify user's profile.
+ *
+ * Uses the existing Spotify authentication system,
+ * including automatic access-token refresh.
+ *
+ * Returns an object containing the user's Spotify ID.
+ */
+export async function getSpotifyUser() {
+    return await spotifyRequest("/me");
 }
 
 /** Convert Spotify's nested track object to the simple LUMA contract.

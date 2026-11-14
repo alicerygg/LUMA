@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Mood Trends in L.U.M.A.">
+    <title>Mood Trends | L.U.M.A.</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="trends-page">
+    <div class="page-shell">
+        <header class="site-header">
+            <div class="header-inner"><a class="site-logo" href="dashboard.html" aria-label="L.U.M.A. home"><span
+                        class="logo-name">L.U.M.A.</span><span class="logo-subtitle">Lifestyle User Mood
+                        Awareness</span></a>
+                <div class="menu-container"><input type="checkbox" id="menu-toggle" class="menu-toggle"
+                        aria-label="Toggle navigation menu"><label for="menu-toggle" class="menu-button"><span
+                            aria-hidden="true">☰</span><span>Menu</span></label>
+                    <nav class="main-navigation" aria-label="Main navigation"><a href="dashboard.html">Overview</a><a
+                            href="listening-history.html">Listening history</a><a href="mood-trends.html"
+                            aria-current="page">Mood trends</a><a href="about.html">About L.U.M.A.</a><a
+                            href="account.html">My Account</a> </nav>
+                </div>
+            </div>
+        </header>
+        <main class="insights-main">
+            <div class="insights-intro">
+                <p class="eyebrow">Your musical moon phases</p>
+                <h1>Your Mood Trends</h1>
+                <p>Explore the emotional tone of your listening over time.</p>
+            </div>
+            
+<!-- ==========================================
+     MOOD TREND TABS
+     ========================================== -->
+
+<div class="period-tabs"
+     role="tablist"
+     aria-label="Mood trend period">
+
+    <button
+        id="tab-daily"
+        class="period-tab"
+        type="button"
+        role="tab"
+        aria-selected="true"
+        aria-controls="panel-daily"
+        tabindex="0"
+        data-period="daily">
+        Daily
+    </button>
+
+    <button
+        id="tab-weekly"
+        class="period-tab"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="panel-weekly"
+        tabindex="-1"
+        data-period="weekly">
+        Weekly
+    </button>
+
+    <button
+        id="tab-monthly"
+        class="period-tab"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="panel-monthly"
+        tabindex="-1"
+        data-period="monthly">
+        Monthly
+    </button>
+</div>
+
+<!-- ==========================================
+     DAILY PANEL
+     ========================================== -->
+
+<div id="panel-daily"
+     class="trend-panel"
+     role="tabpanel"
+     aria-labelledby="tab-daily"
+     data-period="daily">
+
+    <section class="insight-panel moon-display">
+        <div class="phase-moon"
+             data-field="moon"
+             role="img"
+             aria-label="Daily mood moon"></div>
+
+        <p class="mood-score" data-field="score">— / 100</p>
+        <h2 data-field="heading">Your daily mood</h2>
+        <p class="mood-caption" data-field="caption">
+            Today's listening mood will appear here.
+        </p>
+    </section>
+
+    <section class="insight-panel">
+        <h2>A note from L.U.M.A.</h2>
+        <div class="mascot-slot">
+            <img
+                src="https://kkuyhxndwniflfjlxgtp.supabase.co/storage/v1/object/public/luma-site-images/luma_smile_open.png"
+                alt="L.U.M.A. mascot smiling">
+        </div>
+        <p data-field="mascot-message">
+            Every day is a new phase.
+        </p>
+    </section>
+
+    <section class="insight-panel">
+        <h2>Today's listening highlights</h2>
+
+        <div data-field="highlights">
+            <p class="muted">
+                Your top artist today will appear here.
+            </p>
+        </div>
+
+        <div data-field="support" hidden>
+            <h3>A little extra support</h3>
+            <p>
+                Music can help us reflect, but it doesn't
+                tell us exactly how we feel.
+            </p>
+            <ul class="resource-list">
+                <li data-field="contact-1">Trusted contact</li>
+                <li data-field="contact-2">Another trusted contact</li>
+                <li>
+                    U.S. 988 Lifeline:
+                    <a href="tel:988">Call 988</a>
+                </li>
+            </ul>
+            <p data-field="recommendation">
+                An uplifting song suggestion will appear here.
+            </p>
+        </div>
+    </section>
+
+    <section class="insight-panel quote">
+        <p data-field="quote">
+            “You deserve the same kindness you give to others.”
+        </p>
+    </section>
+</div>
+
+<!-- ==========================================
+     WEEKLY PANEL
+     ========================================== -->
+
+<div id="panel-weekly"
+     class="trend-panel"
+     role="tabpanel"
+     aria-labelledby="tab-weekly"
+     data-period="weekly"
+     hidden>
+
+    <section class="insight-panel moon-display">
+        <div class="phase-moon"
+             data-field="moon"
+             role="img"
+             aria-label="Weekly mood moon"></div>
+
+        <p class="mood-score" data-field="score">— / 100</p>
+        <h2 data-field="heading">Your weekly mood</h2>
+        <p class="mood-caption" data-field="caption">
+            Your weekly listening average will appear here.
+        </p>
+    </section>
+
+    <section class="insight-panel">
+        <h2>A note from L.U.M.A.</h2>
+        <div class="mascot-slot">
+            <img
+                src="https://kkuyhxndwniflfjlxgtp.supabase.co/storage/v1/object/public/luma-site-images/luma_smile_open.png"
+                alt="L.U.M.A. mascot smiling">
+        </div>
+        <p data-field="mascot-message">
+            Every week brings a new rhythm.
+        </p>
+    </section>
+
+    <section class="insight-panel">
+        <h2>This week's listening highlights</h2>
+
+        <div data-field="highlights">
+            <p class="muted">
+                Your top artist this week will appear here.
+            </p>
+        </div>
+
+        <div data-field="support" hidden>
+            <h3>A little extra support</h3>
+            <p>
+                If you'd like support, consider reaching out.
+            </p>
+            <ul class="resource-list">
+                <li data-field="contact-1">Trusted contact</li>
+                <li data-field="contact-2">Another trusted contact</li>
+                <li>
+                    U.S. 988 Lifeline:
+                    <a href="tel:988">Call 988</a>
+                </li>
+            </ul>
+            <p data-field="recommendation">
+                An uplifting song suggestion will appear here.
+            </p>
+        </div>
+    </section>
+
+    <section class="insight-panel quote">
+        <p data-field="quote">
+            “Progress is not always a straight line.”
+        </p>
+    </section>
+</div>
+
+<!-- ==========================================
+     MONTHLY PANEL
+     ========================================== -->
+
+<div id="panel-monthly"
+     class="trend-panel"
+     role="tabpanel"
+     aria-labelledby="tab-monthly"
+     data-period="monthly"
+     hidden>
+
+    <section class="insight-panel moon-display">
+        <div class="phase-moon"
+             data-field="moon"
+             role="img"
+             aria-label="Monthly mood moon"></div>
+
+        <p class="mood-score" data-field="score">— / 100</p>
+        <h2 data-field="heading">Your monthly mood</h2>
+        <p class="mood-caption" data-field="caption">
+            Your monthly listening average will appear here.
+        </p>
+    </section>
+
+    <section class="insight-panel">
+        <h2>A note from L.U.M.A.</h2>
+        <div class="mascot-slot">
+            <img
+                src="https://kkuyhxndwniflfjlxgtp.supabase.co/storage/v1/object/public/luma-site-images/luma_smile_open.png"
+                alt="L.U.M.A. mascot smiling">
+        </div>
+        <p data-field="mascot-message">
+            Every phase of you belongs here.
+        </p>
+    </section>
+
+    <section class="insight-panel">
+        <h2>This month's listening highlights</h2>
+
+        <div data-field="highlights">
+            <p class="muted">
+                Your top artist this month will appear here.
+            </p>
+        </div>
+
+        <div data-field="support" hidden>
+            <h3>A little extra support</h3>
+            <p>
+                Remember, you're never alone.
+            </p>
+            <ul class="resource-list">
+                <li data-field="contact-1">Trusted contact</li>
+                <li data-field="contact-2">Another trusted contact</li>
+                <li>
+                    U.S. 988 Lifeline:
+                    <a href="tel:988">Call 988</a>
+                </li>
+            </ul>
+            <p data-field="recommendation">
+                An uplifting song suggestion will appear here.
+            </p>
+        </div>
+    </section>
+
+    <section class="insight-panel quote">
+        <p data-field="quote">
+            “Growth happens in every season.”
+        </p>
+    </section>
+</div>
+
+        </main>
+    </div>
+    <script type="module" src="js/mood-trends.js"></script>
+</body>
+
+</html>
