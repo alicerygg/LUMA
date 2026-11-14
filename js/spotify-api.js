@@ -8,7 +8,7 @@
  * 1. This uses sessionStorage. It is NOT a production token vault.
  */
 
-const CLIENT_ID = "127cd68f8e0a437a9f2ac81b8e68c0a5";
+const CLIENT_ID = "3ebb932eb0d54391ae6da802895132c9";
 const REDIRECT_URI =
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1"
