@@ -6,6 +6,8 @@ from statistics import mean
 from typing import Any, List, Optional
 from urllib.parse import urlencode
 from urllib.request import urlopen
+from collections import Counter
+from datetime import timedelta
 
 from dotenv import load_dotenv
 
@@ -47,16 +49,114 @@ if create_client and SUPABASE_URL and SUPABASE_SECRET_KEY:
 # Allow the local frontend dev server to call this backend from the browser.
 # These origins are for local development only; production should use the
 # frontend's real domain instead.
+# Browser origins allowed to call this backend.
+# Include both local development and deployed frontend URLs.
+
+FRONTEND_ORIGINS = [
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+]
+
+# Set this variable on Render to your deployed frontend origin.
+production_frontend = os.getenv("FRONTEND_URL")
+
+if production_frontend:
+    FRONTEND_ORIGINS.append(
+        production_frontend.rstrip("/")
+    )
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-    ],
-    allow_credentials=True,
+    allow_origins=FRONTEND_ORIGINS,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Each tag contributes:
+# (valence, energy, weight)
+#
+# Valence: -1 = negative, +1 = positive
+# Energy:  0 = calm, 1 = intense
+
+TAG_MOOD_WEIGHTS = {
+    "happy":       (0.9, 0.7, 1.0),
+    "joyful":      (1.0, 0.8, 1.0),
+    "upbeat":      (0.8, 0.9, 1.0),
+    "energetic":   (0.3, 1.0, 1.0),
+    "dance":       (0.6, 0.9, 0.8),
+    "party":       (0.8, 1.0, 0.9),
+
+    "sad":         (-0.9, 0.2, 1.0),
+    "melancholic": (-0.8, 0.2, 1.0),
+    "dark":        (-0.6, 0.5, 0.7),
+    "angry":       (-0.8, 1.0, 1.0),
+
+    "calm":        (0.3, 0.1, 1.0),
+    "peaceful":    (0.7, 0.1, 1.0),
+    "relaxed":     (0.5, 0.2, 1.0),
+    "chill":       (0.3, 0.3, 0.8),
+
+    "romantic":    (0.7, 0.4, 0.9),
+    "love":        (0.7, 0.5, 0.8),
+    "nostalgic":   (-0.2, 0.3, 0.6),
+    "dreamy":      (0.2, 0.2, 0.7),
+}
+
+def calculate_song_mood(tags: list[str]) -> dict:
+    """
+    Estimate valence and energy from Last.fm tags.
+
+    Returns scores, a label, and a basic confidence
+    indicator based on available matching tags.
+    """
+
+    total_valence = 0.0
+    total_energy = 0.0
+    total_weight = 0.0
+    matched_tags = []
+
+    for tag in tags:
+        normalized = tag.strip().casefold()
+
+        if normalized not in TAG_MOOD_WEIGHTS:
+            continue
+
+        valence, energy, weight = TAG_MOOD_WEIGHTS[normalized]
+
+        total_valence += valence * weight
+        total_energy += energy * weight
+        total_weight += weight
+        matched_tags.append(normalized)
+
+    if total_weight == 0:
+        return {
+            "valence": None,
+            "energy": None,
+            "mood": "unknown",
+            "confidence": 0.0,
+            "matched_tags": []
+        }
+
+    valence = total_valence / total_weight
+    energy = total_energy / total_weight
+
+    if valence >= 0:
+        mood = "energetic" if energy >= 0.5 else "content"
+    else:
+        mood = "intense" if energy >= 0.5 else "reflective"
+
+    # Simple evidence-coverage indicator, not a
+    # statistically calibrated probability.
+    confidence = min(len(matched_tags) / 5, 1.0)
+
+    return {
+        "valence": round(valence, 3),
+        "energy": round(energy, 3),
+        "mood": mood,
+        "confidence": round(confidence, 2),
+        "matched_tags": matched_tags
+    }
 
 
 class ListeningEvent(BaseModel):
@@ -94,7 +194,7 @@ class ListeningEvent(BaseModel):
     # Optional enrichment fields used by the trend calculator when available.
     genre: Optional[str] = None
     energy: Optional[float] = Field(default=None, ge=0, le=1)
-    valence: Optional[float] = Field(default=None, ge=0, le=1)
+    valence: Optional[float] = Field(default=None, ge=-1, le=1)
     # The source payload does not provide duration. It remains available for
     # older clients and defaults to zero for trend calculations.
     duration_seconds: int = Field(default=0, ge=0)
@@ -136,12 +236,16 @@ class TrendResponse(BaseModel):
 
 
 class TrackMoodResponse(BaseModel):
-    """Last.fm tags and L.U.M.A.'s estimated mood for one track."""
-
     artist: str
     title: str
     tags: list[str]
+
     estimated_mood: Optional[str] = None
+
+    valence: Optional[float] = None
+    energy: Optional[float] = None
+    confidence: float = 0.0
+
     source: str
     cached: bool
     fetched_at: datetime
@@ -174,7 +278,7 @@ def event_database_row(event: ListeningEvent, user_id: str) -> dict[str, Any]:
     data = event.model_dump()
     data["user_id"] = user_id
     # Older test payloads may omit eventId; create a stable fallback key.
-    data["event_id"] = event.event_id or (
+    data["event_id"] = (
         f"{user_id}:{event.track_id}:{event.played_at.isoformat()}"
     )
     return data
@@ -184,24 +288,6 @@ def make_track_key(artist: str, title: str) -> str:
     """Create a consistent cache key despite capitalization or whitespace."""
     return f"{artist.strip().casefold()}::{title.strip().casefold()}"
 
-
-def estimate_mood(tags: list[str]) -> Optional[str]:
-    """Map community tags into a small, understandable set of moods."""
-    normalized = {tag.casefold() for tag in tags}
-
-    mood_groups = {
-        "energetic": {"energetic", "energy", "party", "dance", "upbeat", "rock"},
-        "happy": {"happy", "cheerful", "joyful", "fun", "positive", "summer"},
-        "relaxed": {"relaxed", "calm", "chill", "ambient", "peaceful", "soft"},
-        "reflective": {"sad", "melancholic", "melancholy", "dark", "nostalgic", "dreamy"},
-        "romantic": {"romantic", "love", "sensual"},
-    }
-
-    # Return the first matching category in a predictable order.
-    for mood, keywords in mood_groups.items():
-        if normalized.intersection(keywords):
-            return mood
-    return None
 
 
 def fetch_lastfm_tags(artist: str, title: str) -> list[str]:
@@ -445,22 +531,42 @@ def get_track_mood(artist: str, title: str) -> TrackMoodResponse:
             detail=f"Supabase mood lookup failed: {error}",
         ) from error
     if cached:
-        return cached.model_copy(update={"cached": True})
+
+        # Recalculate mood using the stored Last.fm tags.
+        # This avoids unnecessary external API requests.
+        classification = calculate_song_mood(cached.tags)
+
+        updated = cached.model_copy(
+            update={
+                "estimated_mood": classification["mood"],
+                "valence": classification["valence"],
+                "energy": classification["energy"],
+                "confidence": classification["confidence"],
+                "cached": True,
+            }
+        )
+
+        return updated
 
     try:
         tags = fetch_lastfm_tags(artist, title)
+
+        classification = calculate_song_mood(tags)
+
+        result = TrackMoodResponse(
+            artist=artist,
+            title=title,
+            tags=tags,
+            estimated_mood=classification["mood"],
+            valence=classification["valence"],
+            energy=classification["energy"],
+            confidence=classification["confidence"],
+            source="last.fm",
+            cached=False,
+            fetched_at=datetime.now(timezone.utc)
+        )
     except Exception as error:
         raise HTTPException(status_code=502, detail=f"Last.fm lookup failed: {error}") from error
-
-    result = TrackMoodResponse(
-        artist=artist,
-        title=title,
-        tags=tags,
-        estimated_mood=estimate_mood(tags),
-        source="last.fm",
-        cached=False,
-        fetched_at=datetime.now(timezone.utc),
-    )
     try:
         if supabase_is_configured():
             supabase_client.table("track_moods").upsert(
@@ -470,6 +576,12 @@ def get_track_mood(artist: str, title: str) -> TrackMoodResponse:
                     "title": result.title,
                     "tags": result.tags,
                     "estimated_mood": result.estimated_mood,
+
+                    # New classification fields
+                    "valence": result.valence,
+                    "energy": result.energy,
+                    "confidence": result.confidence,
+
                     "source": result.source,
                     "fetched_at": result.fetched_at.isoformat(),
                 },
@@ -504,15 +616,23 @@ def save_user_mood_tag(user_id: str, tag: UserMoodTag) -> dict[str, str]:
             )
             current = existing.data[0] if existing.data else {}
             tags = list(current.get("tags") or [])
+
+            # Add the new tag if it isn't already present.
             if mood_tag.casefold() not in {item.casefold() for item in tags}:
                 tags.append(mood_tag)
+
+            # Recalculate after adding the new tag.
+            classification = calculate_song_mood(tags)
             supabase_client.table("track_moods").upsert(
                 {
                     "cache_key": cache_key,
                     "artist": current.get("artist", tag.artist),
                     "title": current.get("title", tag.title),
                     "tags": tags,
-                    "estimated_mood": current.get("estimated_mood") or estimate_mood(tags),
+                    "estimated_mood": classification["mood"],
+                    "valence": classification["valence"],
+                    "energy": classification["energy"],
+                    "confidence": classification["confidence"],
                     "source": current.get("source", "community"),
                     "fetched_at": current.get(
                         "fetched_at", datetime.now(timezone.utc).isoformat()
@@ -525,28 +645,290 @@ def save_user_mood_tag(user_id: str, tag: UserMoodTag) -> dict[str, str]:
                 status_code=503,
                 detail=f"Supabase mood tag save failed: {error}",
             ) from error
-    else:
-        current = track_moods_by_key.get(cache_key)
-        if current:
-            tags = list(current.tags)
-            if mood_tag.casefold() not in {item.casefold() for item in tags}:
-                tags.append(mood_tag)
-            track_moods_by_key[cache_key] = current.model_copy(
-                update={
-                    "tags": tags,
-                    "estimated_mood": current.estimated_mood or estimate_mood(tags),
-                }
-            )
         else:
-            tags = [mood_tag]
-            track_moods_by_key[cache_key] = TrackMoodResponse(
-                artist=tag.artist,
-                title=tag.title,
-                tags=tags,
-                estimated_mood=estimate_mood(tags),
-                source="community",
-                cached=False,
-                fetched_at=datetime.now(timezone.utc),
-            )
+        # Supabase is not configured.
+        # Store the updated classification in memory instead.
+
+            current = track_moods_by_key.get(cache_key)
+
+            if current:
+                # Retrieve the existing song's tags.
+                tags = list(current.tags)
+
+                # Avoid adding duplicate tags.
+                if mood_tag.casefold() not in {
+                    item.casefold() for item in tags
+                }:
+                    tags.append(mood_tag)
+
+                # Recalculate the mood using all available tags.
+                classification = calculate_song_mood(tags)
+
+                # Update the existing cached song.
+                track_moods_by_key[cache_key] = current.model_copy(
+                    update={
+                        "tags": tags,
+                        "estimated_mood": classification["mood"],
+                        "valence": classification["valence"],
+                        "energy": classification["energy"],
+                        "confidence": classification["confidence"],
+                    }
+                )
+
+            else:
+                # This song has not been cached before.
+                tags = [mood_tag]
+
+                classification = calculate_song_mood(tags)
+
+                # Create a new cache entry.
+                track_moods_by_key[cache_key] = TrackMoodResponse(
+                    artist=tag.artist,
+                    title=tag.title,
+                    tags=tags,
+                    estimated_mood=classification["mood"],
+                    valence=classification["valence"],
+                    energy=classification["energy"],
+                    confidence=classification["confidence"],
+                    source="community",
+                    cached=False,
+                    fetched_at=datetime.now(timezone.utc),
+                )
 
     return {"status": "saved", "user_id": user_id, "cache_key": cache_key}
+
+@app.get("/users/{user_id}/mood-trends")
+def get_mood_trends(user_id: str):
+    """
+    Calculate daily, weekly, and monthly listening moods.
+
+    Uses:
+      listening_events: which songs the user played
+      track_moods: each song's classified valence and energy
+
+    Returns all three periods in one API response.
+    """
+
+    if not supabase_is_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="Supabase is required for mood trends."
+        )
+
+    now = datetime.now(timezone.utc)
+    month_start = now - timedelta(days=30)
+
+    try:
+        # Get listening events from the last 30 days.
+        events_result = (
+            supabase_client.table("listening_events")
+            .select("track_id,artist,title,played_at")
+            .eq("user_id", user_id)
+            .gte("played_at", month_start.isoformat())
+            .order("played_at", desc=True)
+            .limit(1000)
+            .execute()
+        )
+
+        events = events_result.data or []
+
+        # Get cached song classifications.
+        # For a hackathon-sized cache this is sufficient.
+        moods_result = (
+            supabase_client.table("track_moods")
+            .select("cache_key,valence,energy")
+            .limit(1000)
+            .execute()
+        )
+
+        moods = {
+            row["cache_key"]: row
+            for row in (moods_result.data or [])
+        }
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Could not load listening trends: {error}"
+        ) from error
+
+    periods = {
+        "daily": timedelta(days=1),
+        "weekly": timedelta(days=7),
+        "monthly": timedelta(days=30)
+    }
+
+    results = {}
+
+    for period, duration in periods.items():
+        cutoff = now - duration
+
+        period_events = [
+            event for event in events
+            if datetime.fromisoformat(
+                event["played_at"].replace("Z", "+00:00")
+            ) >= cutoff
+        ]
+
+        valences = []
+        energies = []
+        artists = []
+
+        for event in period_events:
+            artists.append(event["artist"])
+
+            key = make_track_key(
+                event["artist"],
+                event["title"]
+            )
+
+            classification = moods.get(key)
+
+            if not classification:
+                continue
+
+            if classification["valence"] is not None:
+                valences.append(classification["valence"])
+
+            if classification["energy"] is not None:
+                energies.append(classification["energy"])
+
+        # No classified songs means no score.
+        if not valences:
+            results[period] = {
+                "score": None,
+                "average_valence": None,
+                "average_energy": None,
+                "songs_analyzed": 0,
+                "total_plays": len(period_events),
+                "top_artist": (
+                    Counter(artists).most_common(1)[0][0]
+                    if artists else None
+                )
+            }
+            continue
+
+        average_valence = mean(valences)
+
+        # Convert -1..1 valence to a 0..100 score.
+        score = round((average_valence + 1) * 50)
+
+        results[period] = {
+            "score": max(0, min(100, score)),
+            "average_valence": round(average_valence, 3),
+            "average_energy": (
+                round(mean(energies), 3)
+                if energies else None
+            ),
+            "songs_analyzed": len(valences),
+            "total_plays": len(period_events),
+            "top_artist": (
+                Counter(artists).most_common(1)[0][0]
+                if artists else None
+            )
+        }
+
+    return {
+        "user_id": user_id,
+        "periods": results,
+        "updated_at": now.isoformat()
+    }
+
+
+# ============================================================
+# LISTENING HISTORY STATISTICS
+# ============================================================
+#
+# Returns the user's most-played song and artist
+# from the last 30 days.
+#
+# Uses listening_events already stored in Supabase.
+# Does not make additional Spotify API requests.
+# ============================================================
+
+@app.get("/users/{user_id}/listening-stats")
+def get_listening_stats(user_id: str):
+
+    # Require Supabase for listening history.
+    if not supabase_is_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="Supabase is required for listening history."
+        )
+
+    # Use the same rolling 30-day period as Mood Trends.
+    month_start = datetime.now(timezone.utc) - timedelta(days=30)
+
+    try:
+        # Retrieve the user's recent listening events.
+        response = (
+            supabase_client.table("listening_events")
+            .select("track_id,title,artist,album_art_url")
+            .eq("user_id", user_id)
+            .gte("played_at", month_start.isoformat())
+            .order("played_at", desc=True)
+            .limit(1000)
+            .execute()
+        )
+
+        events = response.data or []
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Could not load listening history: {error}"
+        ) from error
+
+    # No history yet: return an empty result.
+    if not events:
+        return {
+            "total_plays": 0,
+            "top_artist": None,
+            "top_song": None
+        }
+
+    # Count how many times each artist appears.
+    artist_counts = Counter(
+        event["artist"]
+        for event in events
+    )
+
+    # Count plays for each unique Spotify track.
+    song_counts = Counter(
+        event["track_id"]
+        for event in events
+    )
+
+    # Find the most-played artist.
+    top_artist, artist_plays = (
+        artist_counts.most_common(1)[0]
+    )
+
+    # Find the most-played Spotify track.
+    top_track_id, song_plays = (
+        song_counts.most_common(1)[0]
+    )
+
+    # Retrieve the song's title, artist, and artwork.
+    top_song_event = next(
+        event for event in events
+        if event["track_id"] == top_track_id
+    )
+
+    return {
+        "total_plays": len(events),
+
+        "top_artist": {
+            "name": top_artist,
+            "plays": artist_plays
+        },
+
+        "top_song": {
+            "title": top_song_event["title"],
+            "artist": top_song_event["artist"],
+            "plays": song_plays,
+            "album_art_url": top_song_event.get(
+                "album_art_url"
+            )
+        }
+    }

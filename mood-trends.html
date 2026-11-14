@@ -31,44 +31,265 @@
                 <h1>Your Mood Trends</h1>
                 <p>Explore the emotional tone of your listening over time.</p>
             </div>
-            <div class="period-tabs" role="tablist" aria-label="Mood trend period"><button class="period-tab" role="tab"
-                    aria-selected="true" data-period="daily">Daily</button><button class="period-tab" role="tab"
-                    aria-selected="false" data-period="weekly">Weekly</button><button class="period-tab" role="tab"
-                    aria-selected="false" data-period="monthly">Monthly</button></div>
-            <section class="insight-panel moon-display" aria-live="polite">
-                <div class="phase-moon" id="trend-moon" role="img"
-                    aria-label="Moon illumination representing mood score"></div>
-                <p class="mood-score" id="trend-score">— / 100</p>
-                <h2 id="trend-heading">Your mood is taking shape</h2>
-                <p class="mood-caption" id="trend-caption">Connect your listening data to see trends.</p>
-            </section>
-            <section class="insight-panel">
-                <h2>A note from L.U.M.A.</h2>
-                <div class="mascot-slot" id="trend-mascot">
-                    <img src="https://kkuyhxndwniflfjlxgtp.supabase.co/storage/v1/object/public/luma-site-images/luma_smile_open.png">
-                </div>
-            </section>
-            <section class="insight-panel" id="trend-extra">
-                <h2 id="trend-extra-title">Your listening highlights</h2>
-                <div id="trend-highlights">
-                    <p class="muted">Your top artist will appear here once listening data is available.</p>
-                </div>
-                <div id="trend-support" hidden>
-                    <p>Music can be a helpful check-in, but it cannot tell us exactly how you feel. If you'd like
-                        support, consider reaching out.</p>
-                    <ul class="resource-list">
-                        <li>Trusted contact: <span id="support-contact-1">Add a contact</span></li>
-                        <li>Another person you trust: <span id="support-contact-2">Add a contact</span></li>
-                        <li>U.S. 988 Suicide &amp; Crisis Lifeline: <a href="tel:988">Call 988</a> or <a
-                                href="https://988lifeline.org/" target="_blank" rel="noopener noreferrer">visit
-                                988lifeline.org</a></li>
-                    </ul>
-                    <p id="trend-song-recommendation">An uplifting song suggestion will appear here.</p>
-                </div>
-            </section>
-            <section class="insight-panel quote">
-                <p id="trend-quote">“You deserve the same kindness you give to others.”</p>
-            </section>
+            
+<!-- ==========================================
+     MOOD TREND TABS
+     ========================================== -->
+
+<div class="period-tabs"
+     role="tablist"
+     aria-label="Mood trend period">
+
+    <button
+        id="tab-daily"
+        class="period-tab"
+        type="button"
+        role="tab"
+        aria-selected="true"
+        aria-controls="panel-daily"
+        tabindex="0"
+        data-period="daily">
+        Daily
+    </button>
+
+    <button
+        id="tab-weekly"
+        class="period-tab"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="panel-weekly"
+        tabindex="-1"
+        data-period="weekly">
+        Weekly
+    </button>
+
+    <button
+        id="tab-monthly"
+        class="period-tab"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="panel-monthly"
+        tabindex="-1"
+        data-period="monthly">
+        Monthly
+    </button>
+</div>
+
+<!-- ==========================================
+     DAILY PANEL
+     ========================================== -->
+
+<div id="panel-daily"
+     class="trend-panel"
+     role="tabpanel"
+     aria-labelledby="tab-daily"
+     data-period="daily">
+
+    <section class="insight-panel moon-display">
+        <div class="phase-moon"
+             data-field="moon"
+             role="img"
+             aria-label="Daily mood moon"></div>
+
+        <p class="mood-score" data-field="score">— / 100</p>
+        <h2 data-field="heading">Your daily mood</h2>
+        <p class="mood-caption" data-field="caption">
+            Today's listening mood will appear here.
+        </p>
+    </section>
+
+    <section class="insight-panel">
+        <h2>A note from L.U.M.A.</h2>
+        <div class="mascot-slot">
+            <img
+                src="https://kkuyhxndwniflfjlxgtp.supabase.co/storage/v1/object/public/luma-site-images/luma_smile_open.png"
+                alt="L.U.M.A. mascot smiling">
+        </div>
+        <p data-field="mascot-message">
+            Every day is a new phase.
+        </p>
+    </section>
+
+    <section class="insight-panel">
+        <h2>Today's listening highlights</h2>
+
+        <div data-field="highlights">
+            <p class="muted">
+                Your top artist today will appear here.
+            </p>
+        </div>
+
+        <div data-field="support" hidden>
+            <h3>A little extra support</h3>
+            <p>
+                Music can help us reflect, but it doesn't
+                tell us exactly how we feel.
+            </p>
+            <ul class="resource-list">
+                <li data-field="contact-1">Trusted contact</li>
+                <li data-field="contact-2">Another trusted contact</li>
+                <li>
+                    U.S. 988 Lifeline:
+                    <a href="tel:988">Call 988</a>
+                </li>
+            </ul>
+            <p data-field="recommendation">
+                An uplifting song suggestion will appear here.
+            </p>
+        </div>
+    </section>
+
+    <section class="insight-panel quote">
+        <p data-field="quote">
+            “You deserve the same kindness you give to others.”
+        </p>
+    </section>
+</div>
+
+<!-- ==========================================
+     WEEKLY PANEL
+     ========================================== -->
+
+<div id="panel-weekly"
+     class="trend-panel"
+     role="tabpanel"
+     aria-labelledby="tab-weekly"
+     data-period="weekly"
+     hidden>
+
+    <section class="insight-panel moon-display">
+        <div class="phase-moon"
+             data-field="moon"
+             role="img"
+             aria-label="Weekly mood moon"></div>
+
+        <p class="mood-score" data-field="score">— / 100</p>
+        <h2 data-field="heading">Your weekly mood</h2>
+        <p class="mood-caption" data-field="caption">
+            Your weekly listening average will appear here.
+        </p>
+    </section>
+
+    <section class="insight-panel">
+        <h2>A note from L.U.M.A.</h2>
+        <div class="mascot-slot">
+            <img
+                src="https://kkuyhxndwniflfjlxgtp.supabase.co/storage/v1/object/public/luma-site-images/luma_smile_open.png"
+                alt="L.U.M.A. mascot smiling">
+        </div>
+        <p data-field="mascot-message">
+            Every week brings a new rhythm.
+        </p>
+    </section>
+
+    <section class="insight-panel">
+        <h2>This week's listening highlights</h2>
+
+        <div data-field="highlights">
+            <p class="muted">
+                Your top artist this week will appear here.
+            </p>
+        </div>
+
+        <div data-field="support" hidden>
+            <h3>A little extra support</h3>
+            <p>
+                If you'd like support, consider reaching out.
+            </p>
+            <ul class="resource-list">
+                <li data-field="contact-1">Trusted contact</li>
+                <li data-field="contact-2">Another trusted contact</li>
+                <li>
+                    U.S. 988 Lifeline:
+                    <a href="tel:988">Call 988</a>
+                </li>
+            </ul>
+            <p data-field="recommendation">
+                An uplifting song suggestion will appear here.
+            </p>
+        </div>
+    </section>
+
+    <section class="insight-panel quote">
+        <p data-field="quote">
+            “Progress is not always a straight line.”
+        </p>
+    </section>
+</div>
+
+<!-- ==========================================
+     MONTHLY PANEL
+     ========================================== -->
+
+<div id="panel-monthly"
+     class="trend-panel"
+     role="tabpanel"
+     aria-labelledby="tab-monthly"
+     data-period="monthly"
+     hidden>
+
+    <section class="insight-panel moon-display">
+        <div class="phase-moon"
+             data-field="moon"
+             role="img"
+             aria-label="Monthly mood moon"></div>
+
+        <p class="mood-score" data-field="score">— / 100</p>
+        <h2 data-field="heading">Your monthly mood</h2>
+        <p class="mood-caption" data-field="caption">
+            Your monthly listening average will appear here.
+        </p>
+    </section>
+
+    <section class="insight-panel">
+        <h2>A note from L.U.M.A.</h2>
+        <div class="mascot-slot">
+            <img
+                src="https://kkuyhxndwniflfjlxgtp.supabase.co/storage/v1/object/public/luma-site-images/luma_smile_open.png"
+                alt="L.U.M.A. mascot smiling">
+        </div>
+        <p data-field="mascot-message">
+            Every phase of you belongs here.
+        </p>
+    </section>
+
+    <section class="insight-panel">
+        <h2>This month's listening highlights</h2>
+
+        <div data-field="highlights">
+            <p class="muted">
+                Your top artist this month will appear here.
+            </p>
+        </div>
+
+        <div data-field="support" hidden>
+            <h3>A little extra support</h3>
+            <p>
+                Remember, you're never alone.
+            </p>
+            <ul class="resource-list">
+                <li data-field="contact-1">Trusted contact</li>
+                <li data-field="contact-2">Another trusted contact</li>
+                <li>
+                    U.S. 988 Lifeline:
+                    <a href="tel:988">Call 988</a>
+                </li>
+            </ul>
+            <p data-field="recommendation">
+                An uplifting song suggestion will appear here.
+            </p>
+        </div>
+    </section>
+
+    <section class="insight-panel quote">
+        <p data-field="quote">
+            “Growth happens in every season.”
+        </p>
+    </section>
+</div>
+
         </main>
     </div>
     <script type="module" src="js/mood-trends.js"></script>
