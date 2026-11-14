@@ -41,3 +41,9 @@ export function saveHistoryEvent(event) {
     });
 }
 
+/** Ask FastAPI for a cached or newly fetched Last.fm mood estimate. */
+export function getTrackMood(artist, title) {
+    const params = new URLSearchParams({ artist, title });
+    return backendRequest(`/tracks/mood?${params.toString()}`);
+}
+

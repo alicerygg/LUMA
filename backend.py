@@ -1,7 +1,11 @@
 # Standard-library tools used for timestamps, averages, and type hints.
 from datetime import datetime, timezone
+import json
+import os
 from statistics import mean
-from typing import List, Optional
+from typing import Any, List, Optional
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
 # FastAPI creates the web server and HTTPException lets us return clear errors.
 from fastapi import FastAPI, HTTPException
@@ -9,9 +13,25 @@ from fastapi.middleware.cors import CORSMiddleware
 # Pydantic validates incoming JSON and converts it into Python objects.
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
+# Supabase is optional during local development. Without credentials, the
+# backend continues using its temporary in-memory stores.
+try:
+    from supabase import Client, create_client
+except ImportError:  # pragma: no cover - used only before dependencies install
+    Client = Any
+    create_client = None
+
 
 # This object is the FastAPI application that Uvicorn runs.
 app = FastAPI(title="Moon Trend Backend", version="0.1.0")
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+supabase_client: Optional[Client] = None
+
+if create_client and SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+    # The service-role key is server-only and must never be sent to the browser.
+    supabase_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 # Allow the local frontend dev server to call this backend from the browser.
 # These origins are for local development only; production should use the
@@ -104,11 +124,88 @@ class TrendResponse(BaseModel):
     updated_at: datetime
 
 
+class TrackMoodResponse(BaseModel):
+    """Last.fm tags and L.U.M.A.'s estimated mood for one track."""
+
+    artist: str
+    title: str
+    tags: list[str]
+    estimated_mood: Optional[str] = None
+    source: str
+    cached: bool
+    fetched_at: datetime
+
+
 # Temporary in-memory stores.
 # These reset whenever the server restarts. Supabase can replace them later
 # without changing the public endpoint structure.
 events_by_user: dict[str, list[ListeningEvent]] = {}
 current_track_by_user: dict[str, CurrentTrack] = {}
+# Shared across users: the same song should only need one Last.fm lookup.
+track_moods_by_key: dict[str, TrackMoodResponse] = {}
+
+
+def supabase_is_configured() -> bool:
+    """Return whether database-backed storage is ready."""
+    return supabase_client is not None
+
+
+def event_database_row(event: ListeningEvent, user_id: str) -> dict[str, Any]:
+    """Convert a validated event into the database column format."""
+    data = event.model_dump()
+    data["user_id"] = user_id
+    # Older test payloads may omit eventId; create a stable fallback key.
+    data["event_id"] = event.event_id or (
+        f"{user_id}:{event.track_id}:{event.played_at.isoformat()}"
+    )
+    return data
+
+
+def make_track_key(artist: str, title: str) -> str:
+    """Create a consistent cache key despite capitalization or whitespace."""
+    return f"{artist.strip().casefold()}::{title.strip().casefold()}"
+
+
+def estimate_mood(tags: list[str]) -> Optional[str]:
+    """Map community tags into a small, understandable set of moods."""
+    normalized = {tag.casefold() for tag in tags}
+
+    mood_groups = {
+        "energetic": {"energetic", "energy", "party", "dance", "upbeat", "rock"},
+        "happy": {"happy", "cheerful", "joyful", "fun", "positive", "summer"},
+        "relaxed": {"relaxed", "calm", "chill", "ambient", "peaceful", "soft"},
+        "reflective": {"sad", "melancholic", "melancholy", "dark", "nostalgic", "dreamy"},
+        "romantic": {"romantic", "love", "sensual"},
+    }
+
+    # Return the first matching category in a predictable order.
+    for mood, keywords in mood_groups.items():
+        if normalized.intersection(keywords):
+            return mood
+    return None
+
+
+def fetch_lastfm_tags(artist: str, title: str) -> list[str]:
+    """Fetch public community tags from Last.fm for one track."""
+    api_key = os.getenv("LASTFM_API_KEY")
+    if not api_key:
+        raise RuntimeError("LASTFM_API_KEY is not configured")
+
+    query = urlencode({
+        "method": "track.getTopTags",
+        "artist": artist,
+        "track": title,
+        "api_key": api_key,
+        "format": "json",
+    })
+    with urlopen(f"https://ws.audioscrobbler.com/2.0/?{query}", timeout=10) as response:
+        payload = json.load(response)
+
+    return [
+        tag["name"]
+        for tag in payload.get("toptags", {}).get("tag", [])
+        if tag.get("name")
+    ]
 
 
 @app.get("/health")
@@ -124,9 +221,15 @@ def add_events(events: List[ListeningEvent]) -> dict[str, int]:
     if not events:
         raise HTTPException(status_code=400, detail="At least one event is required")
 
-    # Create the user's list if needed, then append each history record.
-    for event in events:
-        events_by_user.setdefault(event.user_id, []).append(event)
+    if supabase_is_configured():
+        rows = [event_database_row(event, event.user_id) for event in events]
+        supabase_client.table("listening_events").upsert(
+            rows, on_conflict="event_id"
+        ).execute()
+    else:
+        # Create the user's list if needed, then append each history record.
+        for event in events:
+            events_by_user.setdefault(event.user_id, []).append(event)
 
     return {"events_received": len(events)}
 
@@ -138,10 +241,16 @@ def add_user_events(user_id: str, events: List[ListeningEvent]) -> dict[str, int
     if not events:
         raise HTTPException(status_code=400, detail="At least one event is required")
 
-    for event in events:
-        # Apply the URL user_id to every submitted event before storing it.
-        event.user_id = user_id
-        events_by_user.setdefault(user_id, []).append(event)
+    if supabase_is_configured():
+        rows = [event_database_row(event, user_id) for event in events]
+        supabase_client.table("listening_events").upsert(
+            rows, on_conflict="event_id"
+        ).execute()
+    else:
+        for event in events:
+            # Apply the URL user_id to every submitted event before storing it.
+            event.user_id = user_id
+            events_by_user.setdefault(user_id, []).append(event)
 
     return {"events_received": len(events)}
 
@@ -149,14 +258,31 @@ def add_user_events(user_id: str, events: List[ListeningEvent]) -> dict[str, int
 @app.post("/users/{user_id}/now-playing", status_code=200)
 def update_now_playing(user_id: str, track: CurrentTrack) -> dict[str, str]:
     """Save or replace the user's currently playing track."""
-    current_track_by_user[user_id] = track
+    if supabase_is_configured():
+        row = track.model_dump()
+        row["user_id"] = user_id
+        supabase_client.table("current_tracks").upsert(
+            row, on_conflict="user_id"
+        ).execute()
+    else:
+        current_track_by_user[user_id] = track
     return {"status": "updated", "user_id": user_id}
 
 
 @app.get("/users/{user_id}/now-playing", response_model=CurrentTrack)
 def get_now_playing(user_id: str) -> CurrentTrack:
     """Return the user's current track, if one has been submitted."""
-    track = current_track_by_user.get(user_id)
+    if supabase_is_configured():
+        result = (
+            supabase_client.table("current_tracks")
+            .select("*")
+            .eq("user_id", user_id)
+            .limit(1)
+            .execute()
+        )
+        track = CurrentTrack.model_validate(result.data[0]) if result.data else None
+    else:
+        track = current_track_by_user.get(user_id)
     if track is None:
         raise HTTPException(status_code=404, detail="No current track found")
     return track
@@ -252,7 +378,71 @@ def calculate_trend(user_events: list[ListeningEvent]) -> TrendResponse:
 def get_trend(user_id: str) -> TrendResponse:
     """Return a trend report for the user's stored listening history."""
     # Return 404 instead of calculating a trend from missing data.
-    user_events = events_by_user.get(user_id, [])
+    if supabase_is_configured():
+        result = (
+            supabase_client.table("listening_events")
+            .select("*")
+            .eq("user_id", user_id)
+            .order("played_at")
+            .execute()
+        )
+        user_events = [ListeningEvent.model_validate(row) for row in result.data]
+    else:
+        user_events = events_by_user.get(user_id, [])
     if not user_events:
         raise HTTPException(status_code=404, detail="No listening events found")
     return calculate_trend(user_events)
+
+
+@app.get("/tracks/mood", response_model=TrackMoodResponse)
+def get_track_mood(artist: str, title: str) -> TrackMoodResponse:
+    """Return a cached mood, or ask Last.fm once for this new track."""
+    cache_key = make_track_key(artist, title)
+    if supabase_is_configured():
+        result = (
+            supabase_client.table("track_moods")
+            .select("*")
+            .eq("cache_key", cache_key)
+            .limit(1)
+            .execute()
+        )
+        cached = (
+            TrackMoodResponse.model_validate({**result.data[0], "cached": True})
+            if result.data
+            else None
+        )
+    else:
+        cached = track_moods_by_key.get(cache_key)
+    if cached:
+        return cached.model_copy(update={"cached": True})
+
+    try:
+        tags = fetch_lastfm_tags(artist, title)
+    except Exception as error:
+        raise HTTPException(status_code=502, detail=f"Last.fm lookup failed: {error}") from error
+
+    result = TrackMoodResponse(
+        artist=artist,
+        title=title,
+        tags=tags,
+        estimated_mood=estimate_mood(tags),
+        source="last.fm",
+        cached=False,
+        fetched_at=datetime.now(timezone.utc),
+    )
+    if supabase_is_configured():
+        supabase_client.table("track_moods").upsert(
+            {
+                "cache_key": cache_key,
+                "artist": result.artist,
+                "title": result.title,
+                "tags": result.tags,
+                "estimated_mood": result.estimated_mood,
+                "source": result.source,
+                "fetched_at": result.fetched_at.isoformat(),
+            },
+            on_conflict="cache_key",
+        ).execute()
+    else:
+        track_moods_by_key[cache_key] = result
+    return result
