@@ -12,6 +12,16 @@ Responsibilities:
 5. Provide a simple interface for future data.
 */
 
+import {
+    getMoodTrends,
+    setBackendUser
+} from "./backend-api.js";
+
+import {
+    isSpotifyConnected,
+    getSpotifyUser
+} from "./spotify-api.js";
+
 const tabs = [...document.querySelectorAll(".period-tab")];
 const panels = [...document.querySelectorAll(".trend-panel")];
 
@@ -28,22 +38,25 @@ const LOW_MOOD_THRESHOLD = 40;
 
 const trendData = {
     daily: {
-        score: 85,
+        score: null,
         topArtist: null,
+        songsAnalyzed: 0,
         mascotMessage: "Every day is a new phase.",
         quote: "You deserve the same kindness you give to others."
     },
 
     weekly: {
-        score: 2,
+        score: null,
         topArtist: null,
+        songsAnalyzed: 0,
         mascotMessage: "Every week brings a new rhythm.",
         quote: "Progress is not always a straight line."
     },
 
     monthly: {
-        score: 50,
+        score: null,
         topArtist: null,
+        songsAnalyzed: 0,
         mascotMessage: "Every phase of you belongs here.",
         quote: "Growth happens in every season."
     }
@@ -121,7 +134,8 @@ function renderPeriod(period) {
         heading.textContent = getMoodDescription(safeScore);
 
         caption.textContent =
-            `Based on your ${period} listening activity.`;
+            `Based on ${data.songsAnalyzed} classified songs ` +
+            `from your ${period} listening activity.`;
 
         // Low scores display additional support resources.
         support.hidden = safeScore >= LOW_MOOD_THRESHOLD;
@@ -217,8 +231,65 @@ export function updateTrend(period, updates) {
     renderPeriod(period);
 }
 
+/**
+ * Load actual mood trends from FastAPI.
+ *
+ * FastAPI reads listening history and song moods
+ * from Supabase, then calculates each period.
+ */
+async function loadMoodTrends() {
+
+    try {
+        const response = await getMoodTrends();
+
+        for (const period of ["daily", "weekly", "monthly"]) {
+
+            const data = response.periods[period];
+
+            if (!data) continue;
+
+            updateTrend(period, {
+                score: data.score,
+                topArtist: data.top_artist,
+                songsAnalyzed: data.songs_analyzed
+            });
+        }
+
+    } catch (error) {
+
+        console.error("Could not load mood trends:", error);
+
+        // Keep the empty states rather than
+        // displaying fabricated mood scores.
+    }
+}
+
 // Initialize all three panels.
 Object.keys(trendData).forEach(renderPeriod);
 
 // Show the daily panel first.
 activateTab("daily");
+
+async function initializeMoodTrends() {
+
+    if (!isSpotifyConnected()) {
+        console.log("Spotify is not connected.");
+        return;
+    }
+
+    try {
+        const spotifyUser = await getSpotifyUser();
+
+        setBackendUser(spotifyUser.id);
+
+        await loadMoodTrends();
+
+    } catch (error) {
+        console.error(
+            "Could not initialize mood trends:",
+            error
+        );
+    }
+}
+
+void initializeMoodTrends();

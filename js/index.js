@@ -43,20 +43,27 @@ import {
     login,
     disconnectSpotify,
     isSpotifyConnected,
-    getCurrentSong
+    getCurrentSong,
+    getSpotifyUser
 } from "./spotify-api.js";
 
 import {
     onSongChanged,
     onPlaybackUpdated,
+    onMoodUpdated,
     startSongMonitoring,
-    stopSongMonitoring
+    stopSongMonitoring,
+    onListeningEvent,
+    startHistoryMonitoring,
+    stopHistoryMonitoring
 } from "./spotify-monitor.js";
 
 import {
-    getTrackMood,
     saveCurrentTrack,
-    saveMoodTag
+    saveMoodTag,
+    saveHistoryEvent,
+    setBackendUser,
+    clearBackendUser
 } from "./backend-api.js";
 
 const elements = {
@@ -298,7 +305,7 @@ function clearSongDisplay() {
  * This listens for song changes instead of every playback update so we do
  * not ask Last.fm repeatedly while the same song is playing.
  */
-async function updateSongMood(song) {
+function updateSongMood(song, mood = null, error = null) {
 
   if (!song) {
     currentMoodTrackKey = null;
@@ -312,7 +319,10 @@ async function updateSongMood(song) {
   }
 
   try {
-    const mood = await getTrackMood(song.artist, song.title);
+    if (error || !mood) {
+        throw error || new Error("Mood classification unavailable");
+    }
+
     const label = mood.estimated_mood ?? "Mood unavailable";
     currentMoodTrackKey = moodStorageKey(song);
     currentMoodArtist = song.artist;
@@ -468,6 +478,13 @@ async function saveUserMoodTag() {
  * connection already exists.
  */
 async function connectHomepage() {
+  // Identify the actual Spotify account.
+    const spotifyUser = await getSpotifyUser();
+
+    // Configure backend requests for this user.
+    setBackendUser(spotifyUser.id);
+
+    console.log("Connected Spotify user:", spotifyUser.id);
 
     // Update the interface immediately.
     spotifyConnected = true;
@@ -477,23 +494,58 @@ async function connectHomepage() {
     // Otherwise we could miss the first song update.
     onPlaybackUpdated((song) => {
 
-        // The Spotify monitor already supplies a
-        // formatted LUMA song object.
         updateSongDisplay(song);
+
+        if (!song) {
+            updateSongMood(null);
+        }
 
     });
 
     // Run once when a different song starts. This saves the song and asks
     // FastAPI for its cached or newly fetched Last.fm mood.
+    // When Spotify detects a different song:
     onSongChanged((song) => {
+
+        // Save the currently playing song.
         void saveCurrentTrack(song).catch((error) => {
             console.error("Could not save current track:", error);
         });
-        void updateSongMood(song);
+
+        // Clear the previous mood while the new one loads.
+        elements.mood.textContent = "◌ Analyzing mood...";
+        elements.moodName.textContent = "Analyzing mood...";
+        elements.moodColor.textContent = "Checking music tags";
+        elements.moodEnergy.textContent = "Please wait";
+        elements.moodDescription.textContent =
+            "L.U.M.A. is estimating the mood of this song.";
+
+        showMoodPrompt(false);
+    });
+
+    // Receive the classification from spotify-monitor.js.
+    // This does NOT make another API request.
+    onMoodUpdated(({ song, mood, error }) => {
+        updateSongMood(song, mood, error);
+    });
+
+    // Store confirmed Spotify listening-history events.
+    // Do not store songChanged events as listening history.
+    onListeningEvent((event) => {
+
+        const { isInitialImport, ...historyEvent } = event;
+
+        void saveHistoryEvent(historyEvent).catch(error => {
+            console.error(
+                "Could not save listening event:",
+                error
+            );
+        });
     });
 
     // Start checking Spotify every 10 seconds.
     startSongMonitoring();
+    startHistoryMonitoring();
 
 }
 
@@ -508,6 +560,8 @@ function disconnectHomepage() {
 
     // Stop future Spotify polling.
     stopSongMonitoring();
+    stopHistoryMonitoring();
+    clearBackendUser();
 
     // Remove saved authentication tokens.
     disconnectSpotify();

@@ -10,6 +10,7 @@
  * Do not insert both streams as listening events or you will double count.
  */
 import { getCurrentSong, getListeningHistory } from "./spotify-api.js";
+import { getTrackMood } from "./backend-api.js";
 
 // Notified when a different song starts playing.
 const songListeners = new Set();
@@ -20,6 +21,13 @@ const playbackListeners = new Set();
 
 // Notified when new listening-history events are discovered.
 const historyListeners = new Set();
+
+// Notified whenever a song's mood has been classified.
+const moodListeners = new Set();
+
+// Track the most recent classification request.
+// This prevents old responses from overwriting newer songs.
+let moodRequestVersion = 0;
 
 const processedEvents = new Set(); // In-memory deduplication; resets on reload.
 
@@ -72,6 +80,23 @@ export function onListeningEvent(callback) {
     return () => historyListeners.delete(callback);
 }
 
+/**
+ * Subscribe to mood classification results.
+ *
+ * The callback receives:
+ * {
+ *   song: Spotify song object,
+ *   mood: Last.fm classification response
+ * }
+ *
+ * Returns an unsubscribe function.
+ */
+export function onMoodUpdated(callback) {
+    moodListeners.add(callback);
+
+    return () => moodListeners.delete(callback);
+}
+
 /** Tell every subscriber about an event.
  * Catch errors per subscriber so a broken UI callback cannot block storage.
  * Async callbacks are NOT awaited: database code should handle failures.
@@ -84,6 +109,55 @@ function notify(listeners, payload) {
             });
         } catch (error) {
             console.error("Spotify subscriber failed:", error);
+        }
+    }
+}
+
+/**
+ * Request the mood of a newly playing song.
+ *
+ * Uses backend-api.js to communicate with FastAPI.
+ * FastAPI handles Last.fm requests and caching.
+ */
+async function classifyCurrentSong(song) {
+
+    // Assign this request a unique version.
+    const requestVersion = ++moodRequestVersion;
+
+    try {
+
+        // Request the song's estimated mood.
+        const mood = await getTrackMood(
+            song.artist,
+            song.title
+        );
+
+        // Ignore results from an outdated song.
+        if (requestVersion !== moodRequestVersion) {
+            return;
+        }
+
+        // Announce the result to subscribers.
+        notify(moodListeners, {
+            song,
+            mood
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Failed to classify current song:",
+            error
+        );
+
+        // Only notify subscribers if this request
+        // still belongs to the current song.
+        if (requestVersion === moodRequestVersion) {
+            notify(moodListeners, {
+                song,
+                mood: null,
+                error
+            });
         }
     }
 }
@@ -124,6 +198,10 @@ async function checkSong() {
         // last-track ID so resuming can trigger an event.
         if (!song?.isPlaying) {
 
+            if (lastTrackId !== null) {
+                moodRequestVersion++;
+            }
+
             lastTrackId = null;
             return;
 
@@ -135,7 +213,13 @@ async function checkSong() {
 
             lastTrackId = song.id;
 
+            // Notify existing current-song subscribers.
             notify(songListeners, song);
+
+            // Request the new song's mood.
+            // Do not await: Spotify polling should continue
+            // independently of Last.fm classification.
+            void classifyCurrentSong(song);
 
         }
 
@@ -164,6 +248,7 @@ export function stopSongMonitoring() {
     if (songTimer !== null) clearInterval(songTimer);
     songTimer = null;
     lastTrackId = null;
+    moodRequestVersion++;
 }
 
 /** Poll up to 50 recent events, oldest first.
