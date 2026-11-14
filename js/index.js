@@ -47,10 +47,16 @@ import {
 } from "./spotify-api.js";
 
 import {
+    onSongChanged,
     onPlaybackUpdated,
     startSongMonitoring,
     stopSongMonitoring
 } from "./spotify-monitor.js";
+
+import {
+    getTrackMood,
+    saveCurrentTrack
+} from "./backend-api.js";
 
 const elements = {
 
@@ -278,6 +284,30 @@ function clearSongDisplay() {
 }
 
 
+/**
+ * Ask FastAPI for the cached Last.fm mood when a new song starts.
+ * This listens for song changes instead of every playback update so we do
+ * not ask Last.fm repeatedly while the same song is playing.
+ */
+async function updateSongMood(song) {
+
+  if (!song) {
+    elements.mood.textContent = "◌ Mood unavailable";
+    return;
+  }
+
+  try {
+    const mood = await getTrackMood(song.artist, song.title);
+    const label = mood.estimated_mood ?? "Mood unavailable";
+    elements.mood.textContent = `◌ ${label}`;
+
+  } catch (error) {
+    console.error("Could not load Last.fm mood:", error);
+    elements.mood.textContent = "◌ Mood unavailable";
+  }
+}
+
+
 // =====================================================
 // SECTION 5 - SPOTIFY CONNECTION STATUS
 // =====================================================
@@ -367,6 +397,15 @@ async function connectHomepage() {
         // formatted LUMA song object.
         updateSongDisplay(song);
 
+    });
+
+    // Run once when a different song starts. This saves the song and asks
+    // FastAPI for its cached or newly fetched Last.fm mood.
+    onSongChanged((song) => {
+        void saveCurrentTrack(song).catch((error) => {
+            console.error("Could not save current track:", error);
+        });
+        void updateSongMood(song);
     });
 
     // Start checking Spotify every 10 seconds.
