@@ -833,3 +833,102 @@ def get_mood_trends(user_id: str):
         "periods": results,
         "updated_at": now.isoformat()
     }
+
+
+# ============================================================
+# LISTENING HISTORY STATISTICS
+# ============================================================
+#
+# Returns the user's most-played song and artist
+# from the last 30 days.
+#
+# Uses listening_events already stored in Supabase.
+# Does not make additional Spotify API requests.
+# ============================================================
+
+@app.get("/users/{user_id}/listening-stats")
+def get_listening_stats(user_id: str):
+
+    # Require Supabase for listening history.
+    if not supabase_is_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="Supabase is required for listening history."
+        )
+
+    # Use the same rolling 30-day period as Mood Trends.
+    month_start = datetime.now(timezone.utc) - timedelta(days=30)
+
+    try:
+        # Retrieve the user's recent listening events.
+        response = (
+            supabase_client.table("listening_events")
+            .select("track_id,title,artist,album_art_url")
+            .eq("user_id", user_id)
+            .gte("played_at", month_start.isoformat())
+            .order("played_at", desc=True)
+            .limit(1000)
+            .execute()
+        )
+
+        events = response.data or []
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Could not load listening history: {error}"
+        ) from error
+
+    # No history yet: return an empty result.
+    if not events:
+        return {
+            "total_plays": 0,
+            "top_artist": None,
+            "top_song": None
+        }
+
+    # Count how many times each artist appears.
+    artist_counts = Counter(
+        event["artist"]
+        for event in events
+    )
+
+    # Count plays for each unique Spotify track.
+    song_counts = Counter(
+        event["track_id"]
+        for event in events
+    )
+
+    # Find the most-played artist.
+    top_artist, artist_plays = (
+        artist_counts.most_common(1)[0]
+    )
+
+    # Find the most-played Spotify track.
+    top_track_id, song_plays = (
+        song_counts.most_common(1)[0]
+    )
+
+    # Retrieve the song's title, artist, and artwork.
+    top_song_event = next(
+        event for event in events
+        if event["track_id"] == top_track_id
+    )
+
+    return {
+        "total_plays": len(events),
+
+        "top_artist": {
+            "name": top_artist,
+            "plays": artist_plays
+        },
+
+        "top_song": {
+            "title": top_song_event["title"],
+            "artist": top_song_event["artist"],
+            "plays": song_plays,
+            "album_art_url": top_song_event.get(
+                "album_art_url"
+            )
+        }
+    }

@@ -127,3 +127,12 @@ export function getMoodTrends() {
         `/users/${requireUserId()}/mood-trends`
     );
 }
+
+/**
+ * Retrieve the current user's monthly listening statistics.
+ */
+export function getListeningStats() {
+    return backendRequest(
+        `/users/${requireUserId()}/listening-stats`
+    );
+}
