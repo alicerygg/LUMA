@@ -2404,3 +2404,290 @@ main {
     padding: 2rem clamp(2rem, 5vw, 6rem)
   }
 }
+
+
+/* ==========================================
+   L.U.M.A. AUTHENTICATION PAGE
+   ========================================== */
+
+.auth-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      circle at 80% 15%,
+      rgba(24, 64, 89, 0.55),
+      transparent 35%
+    ),
+    var(--midnight-violet);
+}
+
+.auth-page .site-header {
+  min-height: auto;
+  overflow: visible;
+}
+
+.auth-page .auth-main {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 100px);
+  padding: 2rem 1rem 4rem;
+  background: transparent;
+}
+
+.auth-card {
+  width: min(100%, 450px);
+  padding: clamp(1.5rem, 5vw, 3rem);
+  border: 1px solid rgba(243, 238, 247, 0.22);
+  border-radius: 1.5rem;
+  background: rgba(97, 70, 105, 0.35);
+  text-align: center;
+}
+
+.auth-moon {
+  margin-bottom: 1rem;
+  color: var(--cornsilk);
+  font-size: 5rem;
+  line-height: 1;
+}
+
+.auth-card h1 {
+  max-width: none;
+  font-size: clamp(2rem, 6vw, 2.8rem);
+  line-height: 1.1;
+}
+
+.auth-description {
+  margin: 1.25rem 0 2rem;
+  color: var(--lavender-mist);
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.auth-tabs button,
+#auth-submit {
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(249, 238, 201, 0.25);
+  border-radius: 0.75rem;
+  background: var(--vintage-grape);
+  color: var(--cornsilk);
+  font: inherit;
+  cursor: pointer;
+}
+
+.auth-tabs button[aria-pressed="true"] {
+  background: var(--yale-blue);
+  border-color: var(--cornsilk);
+}
+
+#auth-form {
+  display: grid;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+#auth-form label {
+  color: var(--lavender-mist);
+  font-size: 0.8rem;
+}
+
+#auth-form input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--midnight-violet);
+  color: var(--cornsilk);
+  font: inherit;
+}
+
+#auth-form input:focus-visible {
+  outline: 2px solid var(--cornsilk);
+  outline-offset: 2px;
+}
+
+#auth-submit {
+  width: 100%;
+  margin-top: 1rem;
+  background: var(--yale-blue);
+}
+
+#auth-submit:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+#auth-message {
+  min-height: 1.5rem;
+  margin-top: 1rem;
+  color: var(--cornsilk);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+#signup-fields:not([hidden]) {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+#signup-fields[hidden] {
+  display: none;
+}
+
+#signup-fields label {
+  color: var(--lavender-mist);
+  font-size: 0.8rem;
+}
+
+#signup-fields input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--midnight-violet);
+  color: var(--cornsilk);
+  font: inherit;
+  color-scheme: dark;
+}
+
+/* Account profile save/upload feedback */
+.account-page #profile-message {
+  margin: 0.5rem 0 1rem;
+  color: var(--cornsilk);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.account-page #display-name:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+/* ==========================================
+   TRUSTED CONTACTS
+   ========================================== */
+
+.account-page .contacts-card {
+  grid-column: 1 / -1;
+  padding: 1.25rem;
+}
+
+.contacts-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+}
+
+.contact-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(243, 238, 247, 0.2);
+  border-radius: 0.85rem;
+  background: rgba(36, 26, 53, 0.35);
+}
+
+.contact-item h4 {
+  margin: 0 0 0.4rem;
+  font-family: var(--heading-font);
+  font-size: 1.1rem;
+  font-weight: normal;
+}
+
+.contact-item p {
+  margin: 0;
+  color: var(--muted-text);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.contact-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.contact-actions label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+}
+
+.contact-actions button,
+.contact-form button {
+  padding: 0.6rem 0.9rem;
+  border: 1px solid rgba(249, 238, 201, 0.25);
+  border-radius: 0.65rem;
+  background: var(--yale-blue);
+  color: var(--cornsilk);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.contact-form {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.contact-form label {
+  font-size: 0.8rem;
+  color: var(--lavender-mist);
+}
+
+.contact-form input,
+.contact-form select {
+  width: 100%;
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--midnight-violet);
+  color: var(--cornsilk);
+  font: inherit;
+}
+
+.contact-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+#contact-form-heading {
+  margin-top: 1.5rem;
+  font-size: 1.35rem;
+}
+
+#contacts-message {
+  min-height: 1.5rem;
+  margin-top: 0.85rem;
+  color: var(--cornsilk);
+  font-size: 0.8rem;
+}
+
+.contact-actions button:disabled,
+.contact-form button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@media (max-width: 600px) {
+  .contact-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

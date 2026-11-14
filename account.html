@@ -29,12 +29,12 @@
 
     <header class="site-header" id="top">
 
-      <div class="header-inner"><a class="site-logo" href="index.html" aria-label="L.U.M.A. home"><span
+      <div class="header-inner"><a class="site-logo" href="dashboard.html" aria-label="L.U.M.A. home"><span
             class="logo-name">L.U.M.A.</span><span class="logo-subtitle">Lifestyle User Mood Awareness</span></a>
         <div class="menu-container"><input type="checkbox" id="menu-toggle" class="menu-toggle"
             aria-label="Toggle navigation menu"><label for="menu-toggle" class="menu-button"><span
               aria-hidden="true">☰</span><span>Menu</span></label>
-          <nav class="main-navigation" aria-label="Main navigation"><a href="index.html">Overview</a><a
+          <nav class="main-navigation" aria-label="Main navigation"><a href="dashboard.html">Overview</a><a
               href="listening-history.html">Listening history</a><a href="mood-trends.html">Mood trends</a><a
               href="about.html">About L.U.M.A.</a><a href="account.html" aria-current="page">My Account</a> </nav>
         </div>
@@ -82,10 +82,12 @@
         <div class="name-field">
           <label for="display-name">Name</label>
           <div class="input-with-icon">
-            <input id="display-name" type="text" value="Alex Morgan" />
+            <input id="display-name" type="text" maxlength="80" placeholder="Your display name" autocomplete="nickname"
+              disabled>
             <span class="edit-icon" aria-hidden="true">⌕</span>
           </div>
         </div>
+        <p id="profile-message" role="status" aria-live="polite"></p>
       </section>
 
       <div class="account-cards">
@@ -94,7 +96,7 @@
           <div class="card-icon person-icon" aria-hidden="true"></div>
           <div class="card-content">
             <h2 id="account-type-title">Account type</h2>
-            <p>Standard account</p>
+            <p id="account-type">Loading account type...</p>
           </div>
         </section>
 
@@ -123,6 +125,57 @@
           </a>
         </section>
 
+
+        <!-- ==========================================
+     TRUSTED CONTACTS
+     ========================================== -->
+        <section class="account-card contacts-card" aria-labelledby="contacts-heading">
+
+          <div class="card-heading">
+            <div class="card-icon" aria-hidden="true">♡</div>
+            <div class="card-content">
+              <h2 id="contacts-heading">Trusted contacts</h2>
+              <p>People you can turn to for support.</p>
+            </div>
+          </div>
+
+          <!-- Existing contacts appear here. -->
+          <div id="contacts-list" class="contacts-list" aria-live="polite">
+            <p>Loading contacts...</p>
+          </div>
+
+          <h3 id="contact-form-heading">Add a contact</h3>
+
+          <form id="contact-form" class="contact-form">
+            <label for="contact-name">Name</label>
+            <input id="contact-name" type="text" maxlength="100" required>
+
+            <label for="contact-email">Email</label>
+            <input id="contact-email" type="email">
+
+            <label for="contact-phone">Phone</label>
+            <input id="contact-phone" type="tel">
+
+            <label for="contact-channel">Preferred contact method</label>
+            <select id="contact-channel">
+              <option value="email">Email</option>
+              <option value="phone">Phone</option>
+            </select>
+
+            <div class="contact-form-actions">
+              <button type="submit" id="contact-save">
+                Save contact
+              </button>
+              <button type="button" id="contact-cancel" hidden>
+                Cancel editing
+              </button>
+            </div>
+          </form>
+
+          <p id="contacts-message" role="status" aria-live="polite"></p>
+        </section>
+
+
         <!-- Help and support contacts. -->
         <section class="account-card help-card" aria-labelledby="help-title">
           <div class="card-heading">
@@ -149,13 +202,13 @@
         </section>
       </div>
 
-      <a class="logout-button" href="#logout">
+      <a class="logout-button" id="logout-button" href="#logout">
         <span class="logout-icon" aria-hidden="true">↪</span>
         Log out
       </a>
     </main>
   </div>
-  <script src="./js/account.js" defer></script>
+  <script type="module" src="./js/account.js"></script>
 </body>
 
 </html>
