@@ -28,8 +28,8 @@ class ListeningEvent(BaseModel):
         default=None,
         validation_alias=AliasChoices("spotifyUrl", "spotify_url"),
     )
-    is_playing: bool = Field(
-        default=False,
+    is_playing: Optional[bool] = Field(
+        default=None,
         validation_alias=AliasChoices("isPlaying", "is_playing"),
     )
     explicit: bool = False
@@ -39,6 +39,29 @@ class ListeningEvent(BaseModel):
     # The source payload does not provide duration. It remains available for
     # older clients and defaults to zero for trend calculations.
     duration_seconds: int = Field(default=0, ge=0)
+
+
+class CurrentTrack(BaseModel):
+    """The track currently playing for a user."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    track_id: str = Field(validation_alias=AliasChoices("id", "track_id"))
+    title: str
+    artist: str
+    album: Optional[str] = None
+    album_art_url: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("albumArt", "album_art_url"),
+    )
+    spotify_url: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("spotifyUrl", "spotify_url"),
+    )
+    explicit: bool = False
+    is_playing: bool = Field(
+        validation_alias=AliasChoices("isPlaying", "is_playing"),
+    )
 
 
 class TrendResponse(BaseModel):
@@ -54,6 +77,7 @@ class TrendResponse(BaseModel):
 # Temporary in-memory store. Replace this with Supabase once the teammate
 # confirms the final table schema and credentials.
 events_by_user: dict[str, list[ListeningEvent]] = {}
+current_track_by_user: dict[str, CurrentTrack] = {}
 
 
 @app.get("/health")
@@ -83,6 +107,20 @@ def add_user_events(user_id: str, events: List[ListeningEvent]) -> dict[str, int
         events_by_user.setdefault(user_id, []).append(event)
 
     return {"events_received": len(events)}
+
+
+@app.post("/users/{user_id}/now-playing", status_code=200)
+def update_now_playing(user_id: str, track: CurrentTrack) -> dict[str, str]:
+    current_track_by_user[user_id] = track
+    return {"status": "updated", "user_id": user_id}
+
+
+@app.get("/users/{user_id}/now-playing", response_model=CurrentTrack)
+def get_now_playing(user_id: str) -> CurrentTrack:
+    track = current_track_by_user.get(user_id)
+    if track is None:
+        raise HTTPException(status_code=404, detail="No current track found")
+    return track
 
 
 def calculate_trend(user_events: list[ListeningEvent]) -> TrendResponse:
