@@ -47,10 +47,16 @@ import {
 } from "./spotify-api.js";
 
 import {
+    onSongChanged,
     onPlaybackUpdated,
     startSongMonitoring,
     stopSongMonitoring
 } from "./spotify-monitor.js";
+
+import {
+    getTrackMood,
+    saveCurrentTrack
+} from "./backend-api.js";
 
 const elements = {
 
@@ -71,7 +77,15 @@ const elements = {
   duration: document.getElementById("song-duration"),
 
   // Mood information
-  mood: document.getElementById("song-mood")
+  mood: document.getElementById("song-mood"),
+  moodName: document.querySelector(".mood-name"),
+  moodColor: document.querySelector(".mood-color"),
+  moodEnergy: document.querySelector(".energy"),
+  moodDescription: document.querySelector(".mood-description"),
+  moodPrompt: document.getElementById("mood-tag-prompt"),
+  moodInput: document.getElementById("custom-mood-input"),
+  moodSave: document.getElementById("save-mood-tag"),
+  moodMessage: document.getElementById("mood-tag-message")
 
 };
 
@@ -278,6 +292,62 @@ function clearSongDisplay() {
 }
 
 
+/**
+ * Ask FastAPI for the cached Last.fm mood when a new song starts.
+ * This listens for song changes instead of every playback update so we do
+ * not ask Last.fm repeatedly while the same song is playing.
+ */
+async function updateSongMood(song) {
+
+  if (!song) {
+    currentMoodTrackKey = null;
+    showMoodPrompt(false);
+    elements.mood.textContent = "◌ Mood unavailable";
+    elements.moodName.textContent = "Mood unavailable";
+    elements.moodColor.textContent = "No mood data yet";
+    elements.moodEnergy.textContent = "Waiting for a song";
+    elements.moodDescription.textContent = "Start listening to see an estimated music mood.";
+    return;
+  }
+
+  try {
+    const mood = await getTrackMood(song.artist, song.title);
+    const label = mood.estimated_mood ?? "Mood unavailable";
+    currentMoodTrackKey = moodStorageKey(song);
+    const savedMood = localStorage.getItem(currentMoodTrackKey);
+
+    if (!mood.tags.length && savedMood) {
+      elements.mood.textContent = `◌ ${savedMood}`;
+      elements.moodName.textContent = savedMood;
+      elements.moodColor.textContent = "Your personal mood tag";
+      elements.moodEnergy.textContent = "Added by you";
+      elements.moodDescription.textContent = "This mood was saved privately in L.U.M.A.";
+      showMoodPrompt(false);
+      return;
+    }
+
+    elements.mood.textContent = `◌ ${label}`;
+    elements.moodName.textContent = label;
+    elements.moodColor.textContent = mood.tags.length
+      ? `Last.fm tags: ${mood.tags.slice(0, 3).join(", ")}`
+      : "No Last.fm tags found";
+    elements.moodEnergy.textContent = "Estimated from community music tags";
+    elements.moodDescription.textContent =
+      "This is an estimated music mood based on Last.fm community tags.";
+    showMoodPrompt(!mood.tags.length);
+
+  } catch (error) {
+    console.error("Could not load Last.fm mood:", error);
+    elements.mood.textContent = "◌ Mood unavailable";
+    elements.moodName.textContent = "Mood unavailable";
+    elements.moodColor.textContent = "Last.fm mood unavailable";
+    elements.moodEnergy.textContent = "Try again with another song";
+    elements.moodDescription.textContent = "We could not retrieve mood tags for this song.";
+    showMoodPrompt(false);
+  }
+}
+
+
 // =====================================================
 // SECTION 5 - SPOTIFY CONNECTION STATUS
 // =====================================================
@@ -345,6 +415,38 @@ functions to the existing Spotify system.
 // Tracks whether the current browser session
 // has an active Spotify connection.
 let spotifyConnected = false;
+let currentMoodTrackKey = null;
+
+
+function moodStorageKey(song) {
+  return `luma-mood:${song.artist}:${song.title}`.toLowerCase();
+}
+
+
+function showMoodPrompt(show) {
+  elements.moodPrompt.hidden = !show;
+  if (!show) {
+    elements.moodInput.value = "";
+    elements.moodMessage.textContent = "";
+  }
+}
+
+
+function saveUserMoodTag() {
+  const tag = elements.moodInput.value.trim();
+  if (!tag || !currentMoodTrackKey) {
+    elements.moodMessage.textContent = "Enter a mood first.";
+    return;
+  }
+
+  localStorage.setItem(currentMoodTrackKey, tag);
+  elements.mood.textContent = `◌ ${tag}`;
+  elements.moodName.textContent = tag;
+  elements.moodColor.textContent = "Your personal mood tag";
+  elements.moodEnergy.textContent = "Added by you";
+  elements.moodDescription.textContent = "This mood was saved privately in L.U.M.A.";
+  showMoodPrompt(false);
+}
 
 
 /**
@@ -367,6 +469,15 @@ async function connectHomepage() {
         // formatted LUMA song object.
         updateSongDisplay(song);
 
+    });
+
+    // Run once when a different song starts. This saves the song and asks
+    // FastAPI for its cached or newly fetched Last.fm mood.
+    onSongChanged((song) => {
+        void saveCurrentTrack(song).catch((error) => {
+            console.error("Could not save current track:", error);
+        });
+        void updateSongMood(song);
     });
 
     // Start checking Spotify every 10 seconds.
@@ -426,6 +537,8 @@ async function initializeHomepage() {
         "click",
         handleSpotifyButtonClick
     );
+
+    elements.moodSave.addEventListener("click", saveUserMoodTag);
 
     // Check whether tokens already exist in storage.
     if (isSpotifyConnected()) {
