@@ -1335,75 +1335,6 @@ SPOTIFY LOGIN BUTTON
   margin-bottom: 1.55rem;
 }
 
-/* .account-page .luma-sprite {
-  position: relative;
-  width: 7.2rem;
-  height: 7.2rem;
-  border-radius: 50%;
-  background: rgba(118, 88, 125, 0.72);
-}
-
-.account-page .sprite-head {
-  position: absolute;
-  top: 1.2rem;
-  left: 2rem;
-  z-index: 1;
-  width: 3.3rem;
-  height: 3.3rem;
-  border-radius: 48% 52% 52% 48%;
-  background: var(--cornsilk);
-  box-shadow: -1.35rem 0.2rem 0 0.65rem #263b55;
-}
-
-.account-page .sprite-head::before,
-.account-page .sprite-head::after {
-  position: absolute;
-  top: 1.7rem;
-  width: 0.3rem;
-  height: 0.16rem;
-  border-radius: 50%;
-  background: var(--midnight-violet);
-  content: "";
-}
-
-.account-page .sprite-head::before {
-  left: 1.05rem;
-}
-
-.account-page .sprite-head::after {
-  right: 1.05rem;
-}
-
-.account-page .sprite-body {
-  position: absolute;
-  bottom: 0.5rem;
-  left: 1.65rem;
-  width: 4.2rem;
-  height: 2.5rem;
-  border-radius: 3rem 3rem 0.6rem 0.6rem;
-  background: #263b55;
-  transform: rotate(-8deg);
-}
-
-.account-page .sprite-moon,
-.account-page .sprite-stars {
-  position: absolute;
-  z-index: 2;
-  color: var(--cornsilk);
-}
-
-.account-page .sprite-moon {
-  right: 1.3rem;
-  bottom: 1rem;
-  font-size: 1.3rem;
-}
-
-.account-page .sprite-stars {
-  top: 0.85rem;
-  left: 0.85rem;
-  font-size: 1.2rem;
-} */
-
 .account-page .name-field label {
   display: block;
   margin-bottom: 0.45rem;
@@ -2366,5 +2297,322 @@ ACCOUNT PROFILE PICTURE
   .account-page .profile-picture-container {
     width: 7rem;
     height: 7rem;
+  }
+}
+
+
+/*
+=================================================
+L.U.M.A. ABOUT PAGE
+=================================================
+
+Uses the shared L.U.M.A. theme.
+
+This section only styles elements inside
+<body class="about-page">.
+
+It will not affect the dashboard or account page.
+*/
+
+/* ---------- PAGE BACKGROUND ---------- */
+
+.about-page {
+  min-width: 320px;
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      circle at 88% 8%,
+      rgba(24, 64, 89, 0.65),
+      transparent 26rem
+    ),
+    linear-gradient(
+      155deg,
+      #1e1630 0%,
+      var(--midnight-violet) 58%,
+      #171329 100%
+    );
+}
+
+/* ---------- PAGE CONTAINER ---------- */
+
+.about-page .page-shell {
+  width: 100%;
+  max-width: 1100px;
+  min-height: 100vh;
+  margin: 0 auto;
+}
+
+/* ---------- HEADER ---------- */
+
+.about-page .site-header {
+  position: relative;
+  min-height: 320px;
+  padding: 1.5rem;
+  overflow: visible;
+
+  background: linear-gradient(
+    115deg,
+    var(--midnight-violet),
+    var(--yale-blue)
+  );
+}
+
+/*
+  Keep the decorative moon inside the header,
+  without allowing it to block the navigation.
+*/
+
+.about-page .moon,
+.about-page .star {
+  pointer-events: none;
+}
+
+/* Ensure menu appears above decorative elements */
+
+.about-page .header-inner {
+  position: relative;
+  z-index: 20;
+}
+
+.about-page .main-navigation {
+  z-index: 30;
+}
+
+/* Current navigation page */
+
+.about-page .main-navigation a[aria-current="page"] {
+  background-color: var(--vintage-grape);
+  color: var(--cornsilk);
+}
+
+/* ---------- HERO CONTENT ---------- */
+
+.about-page .hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 32rem;
+  margin-top: 3rem;
+}
+
+.about-page .hero-content h1 {
+  max-width: 28rem;
+}
+
+.about-page .hero-copy {
+  max-width: 25rem;
+  color: var(--lavender-mist);
+}
+
+.about-page .daily-note {
+  color: var(--cornsilk);
+}
+
+/* ---------- MAIN CONTENT ---------- */
+
+.about-page .about-main {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  background: transparent;
+}
+
+/* ---------- INFORMATION CARDS ---------- */
+
+.about-page .about-card {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+
+  margin-bottom: 1rem;
+  padding: 1.15rem;
+
+  border: 1px solid rgba(243, 238, 247, 0.22);
+  border-radius: var(--card-radius);
+
+  background: linear-gradient(
+    145deg,
+    rgba(97, 70, 105, 0.58),
+    rgba(97, 70, 105, 0.3)
+  );
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+/* Subtle hover effect */
+
+.about-page .about-card:hover {
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 12px 35px rgba(0, 0, 0, 0.15);
+}
+
+/* ---------- CARD ICONS ---------- */
+
+.about-page .about-card-icon {
+  display: grid;
+  place-items: center;
+
+  width: 4rem;
+  height: 4rem;
+
+  border-radius: 50%;
+  background-color: rgba(97, 70, 105, 0.8);
+
+  color: var(--cornsilk);
+  font-size: 2rem;
+}
+
+/* ---------- CARD TYPOGRAPHY ---------- */
+
+.about-page .about-card h2 {
+  margin: 0 0 0.45rem;
+
+  font-family: var(--heading-font);
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+.about-page .about-card p {
+  margin: 0;
+
+  color: var(--lavender-mist);
+  font-family: var(--link-font);
+
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+/* ---------- BACK TO OVERVIEW BUTTON ---------- */
+
+.about-page .about-cta {
+  display: block;
+
+  width: min(100%, 22rem);
+  margin: 1.75rem auto 0;
+  padding: 0.9rem 1rem;
+
+  border: 1px solid rgba(249, 238, 201, 0.15);
+  border-radius: 999px;
+
+  background-color: var(--yale-blue);
+  color: var(--cornsilk);
+
+  font-family: var(--link-font);
+  font-size: 0.9rem;
+  text-align: center;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.about-page .about-cta:hover {
+  background-color: var(--vintage-grape);
+  transform: translateY(-2px);
+}
+
+.about-page .about-cta:focus-visible {
+  outline: 2px solid var(--cornsilk);
+  outline-offset: 4px;
+}
+
+/*
+=================================================
+SMALL MOBILE SCREENS
+=================================================
+*/
+
+@media (max-width: 390px) {
+
+  .about-page .about-card {
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 0.9rem;
+  }
+
+  .about-page .about-card-icon {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.5rem;
+  }
+
+  .about-page .about-card h2 {
+    font-size: 1.25rem;
+  }
+
+  .about-page .moon {
+    opacity: 0.65;
+  }
+}
+
+/*
+=================================================
+TABLET AND DESKTOP
+=================================================
+*/
+
+@media (min-width: 700px) {
+
+  .about-page .site-header {
+    min-height: 440px;
+    padding: 2rem clamp(2rem, 5vw, 6rem);
+  }
+
+  .about-page .hero-content {
+    max-width: 700px;
+    margin-top: 4.5rem;
+  }
+
+  .about-page .hero-content h1 {
+    max-width: 650px;
+  }
+
+  .about-page .about-main {
+    padding: 3rem 2rem 4rem;
+  }
+
+  .about-page .about-card {
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 1.5rem;
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .about-page .about-card-icon {
+    width: 5.5rem;
+    height: 5.5rem;
+    font-size: 2.75rem;
+  }
+
+  .about-page .about-card h2 {
+    font-size: 2rem;
+  }
+
+  .about-page .about-card p {
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+}
+
+/*
+=================================================
+LARGE DESKTOP
+=================================================
+*/
+
+@media (min-width: 1200px) {
+
+  .about-page .site-header {
+    min-height: 500px;
+  }
+
+  .about-page .hero-content {
+    margin-top: 5.5rem;
   }
 }
