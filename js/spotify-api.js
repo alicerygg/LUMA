@@ -9,7 +9,11 @@
  */
 
 const CLIENT_ID = "127cd68f8e0a437a9f2ac81b8e68c0a5";
-const REDIRECT_URI = "http://127.0.0.1:5500/callback.html";
+const REDIRECT_URI =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+        ? window.location.origin + "/callback.html"
+        : "https://alicerygg.github.io/LUMA/callback.html";
 
 // Spotify permissions: current playback and recently played tracks.
 const SCOPES = ["user-read-currently-playing", "user-read-recently-played"];
