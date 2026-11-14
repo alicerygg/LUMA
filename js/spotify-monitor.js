@@ -11,8 +11,16 @@
  */
 import { getCurrentSong, getListeningHistory } from "./spotify-api.js";
 
+// Notified when a different song starts playing.
 const songListeners = new Set();
+
+// Notified on every successful current-playback check.
+// Used by the homepage to keep its display synchronized.
+const playbackListeners = new Set();
+
+// Notified when new listening-history events are discovered.
 const historyListeners = new Set();
+
 const processedEvents = new Set(); // In-memory deduplication; resets on reload.
 
 let songTimer = null;
@@ -29,6 +37,30 @@ let historyInitialized = false;
 export function onSongChanged(callback) {
     songListeners.add(callback);
     return () => songListeners.delete(callback);
+}
+
+/**
+ * Subscribe to current playback updates.
+ *
+ * Unlike onSongChanged(), this listener receives updates
+ * even when the song itself hasn't changed.
+ *
+ * This allows the homepage to update:
+ * - Song progress
+ * - Paused/playing status
+ * - Current track information
+ *
+ * The callback receives a formatted song object,
+ * or null when no current track is available.
+ *
+ * Returns an unsubscribe function.
+ */
+export function onPlaybackUpdated(callback) {
+
+    playbackListeners.add(callback);
+
+    return () => playbackListeners.delete(callback);
+
 }
 
 /** Subscribe to newly discovered listening-history events.
@@ -56,29 +88,67 @@ function notify(listeners, payload) {
     }
 }
 
-/** One check for the current playing track.
- * Prevent overlapping network requests when Spotify responds slowly.
- * Reset lastTrackId when playback stops so resuming emits an update.
- * NOTE: two consecutive plays of the same track may not trigger this;
- * the timestamped history monitor handles those events instead.
+/**
+ * Check Spotify for the current song.
+ *
+ * We maintain TWO different notification systems:
+ *
+ * playbackListeners:
+ *   Receive every successful playback snapshot.
+ *   Useful for updating the homepage.
+ *
+ * songListeners:
+ *   Only receive events when a different song begins.
+ *   Useful for mood classification.
+ *
+ * These events are NOT confirmed listening-history entries.
  */
 async function checkSong() {
+
+    // Prevent overlapping Spotify requests.
     if (checkingSong) return;
+
     checkingSong = true;
+
     try {
+
+        // Ask our Spotify API module for the current song.
         const song = await getCurrentSong();
+
+        // Always update playback subscribers.
+        // Even if the same song is playing, its progress
+        // and playback state may have changed.
+        notify(playbackListeners, song);
+
+        // If nothing is actively playing, reset the
+        // last-track ID so resuming can trigger an event.
         if (!song?.isPlaying) {
+
             lastTrackId = null;
             return;
+
         }
+
+        // Only notify song-change subscribers when
+        // the playing track differs from the last one.
         if (song.id !== lastTrackId) {
+
             lastTrackId = song.id;
+
             notify(songListeners, song);
+
         }
+
     } catch (error) {
+
+        // Keep the monitor alive after a temporary error.
         console.error("Current-song polling failed:", error);
+
     } finally {
+
+        // Allow the next request to run.
         checkingSong = false;
+
     }
 }
 

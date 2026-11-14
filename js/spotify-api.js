@@ -9,7 +9,11 @@
  */
 
 const CLIENT_ID = "127cd68f8e0a437a9f2ac81b8e68c0a5";
-const REDIRECT_URI = "http://127.0.0.1:5500/callback.html";
+const REDIRECT_URI =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+        ? window.location.origin + "/callback.html"
+        : "https://alicerygg.github.io/LUMA/callback.html";
 
 // Spotify permissions: current playback and recently played tracks.
 const SCOPES = ["user-read-currently-playing", "user-read-recently-played"];
@@ -52,6 +56,36 @@ function saveTokens(data) {
 export function isSpotifyConnected() {
     return Boolean(sessionStorage.getItem("spotify_access_token") ||
         sessionStorage.getItem("spotify_refresh_token"));
+}
+
+/**
+ * Disconnect the current Spotify session from LUMA.
+ *
+ * For our prototype, Spotify tokens are stored
+ * in sessionStorage.
+ *
+ * Removing these tokens means LUMA can no longer
+ * make authenticated Spotify requests using this session.
+ *
+ * IMPORTANT:
+ * This does NOT revoke permission on Spotify's website.
+ * It only disconnects the current browser session.
+ */
+export function disconnectSpotify() {
+
+    // Remove the access token used for API requests.
+    sessionStorage.removeItem("spotify_access_token");
+
+    // Remove the token used to obtain new access tokens.
+    sessionStorage.removeItem("spotify_refresh_token");
+
+    // Remove the saved token expiration time.
+    sessionStorage.removeItem("spotify_expires_at");
+
+    // Clear any unfinished authorization attempt.
+    sessionStorage.removeItem("spotify_verifier");
+    sessionStorage.removeItem("spotify_state");
+
 }
 
 /** Called when the user clicks "Connect Spotify".
@@ -190,17 +224,44 @@ export function formatListeningEvent(entry) {
     };
 }
 
-/** Returns a current song object or null; never touches the page.
- * isPlaying distinguishes paused from actively playing.
- * progressMs can help the UI render a playback progress bar.
+/**
+ * Get the user's currently playing Spotify song.
+ *
+ * Spotify returns a large JSON response.
+ * formatSpotifyTrack() converts the track information
+ * into our standard LUMA song format.
+ *
+ * We then add playback-specific information:
+ *
+ * isPlaying  - Whether the song is actively playing.
+ * progressMs - Current position in the song.
+ * durationMs - Total length of the song.
+ *
+ * Returns null if Spotify has no current track.
  */
 export async function getCurrentSong() {
+
+    // Make an authenticated request using our existing
+    // token management and automatic refresh system.
     const data = await spotifyRequest("/me/player/currently-playing");
-    if (!data?.item || data.item.type !== "track") return null;
+
+    // Spotify may return no current track.
+    if (!data?.item || data.item.type !== "track") {
+        return null;
+    }
+
     return {
+
+        // Reuse the standardized track information.
         ...formatSpotifyTrack(data.item),
+
+        // Playback-specific information.
         isPlaying: Boolean(data.is_playing),
-        progressMs: data.progress_ms ?? null
+
+        progressMs: data.progress_ms ?? 0,
+
+        durationMs: data.item.duration_ms ?? 0
+
     };
 }
 

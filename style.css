@@ -62,38 +62,181 @@ a {
   text-transform: uppercase;
 }
 
-.menu-toggle {
-  display: none;
+
+/*
+=================================================
+LUMA RESPONSIVE HEADER MENU
+=================================================
+
+The same hamburger menu is used on all screen sizes.
+
+The menu dropdown appears directly below the button
+rather than pushing the header content downward.
+*/
+
+/* Main header row */
+.header-inner {
+  position: relative;
+  z-index: 10;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 1rem;
 }
 
+/* Keeps the menu button and dropdown together */
+.menu-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Hide the checkbox itself */
+.menu-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+/* Hamburger menu button */
 .menu-button {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.55rem 0.8rem;
+  justify-content: center;
+
+  gap: 0.6rem;
+
+  padding: 0.75rem 1.1rem;
+
+  border: 1px solid rgba(249, 238, 201, 0.15);
   border-radius: 999px;
+
   background-color: var(--vintage-grape);
   color: var(--cornsilk);
+
   cursor: pointer;
+
   font-family: var(--link-font);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
 }
+
+/* Hover effect */
+.menu-button:hover {
+  background-color: #795781;
+  transform: translateY(-2px);
+}
+
+/* Keyboard focus indicator */
+.menu-toggle:focus-visible + .menu-button {
+  outline: 2px solid var(--cornsilk);
+  outline-offset: 4px;
+}
+
+/*
+-----------------------------------------------
+DROPDOWN MENU
+-----------------------------------------------
+*/
 
 .main-navigation {
-  position: relative;
-  z-index: 3;
+  position: absolute;
+
+  /* Position below the hamburger button */
+  top: calc(100% + 0.75rem);
+  right: 0;
+
+  /* Responsive width */
+  width: min(280px, calc(100vw - 2rem));
+
+  /* Hidden until the checkbox is checked */
   display: none;
+
   flex-direction: column;
-  gap: 1rem;
-  margin-top: 1.5rem;
-  padding: 1rem;
-  border-radius: 0.75rem;
+  gap: 0.25rem;
+
+  margin: 0;
+  padding: 0.8rem;
+
+  border: 1px solid rgba(249, 238, 201, 0.15);
+  border-radius: 1rem;
+
   background-color: var(--midnight-violet);
+
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+
+  z-index: 20;
 }
 
+/* Show the dropdown when the checkbox is checked */
 .menu-toggle:checked ~ .main-navigation {
   display: flex;
 }
+
+/* Navigation links */
+.main-navigation a {
+  display: block;
+
+  padding: 0.85rem 1rem;
+
+  border-radius: 0.6rem;
+
+  color: var(--cornsilk);
+  font-size: 0.85rem;
+
+  transition: background-color 0.2s ease;
+}
+
+/* Hover effect for navigation links */
+.main-navigation a:hover {
+  background-color: var(--vintage-grape);
+}
+
+/*
+-----------------------------------------------
+SPOTIFY CONNECTION
+-----------------------------------------------
+*/
+
+#spotify-login-button {
+  width: 100%;
+
+  margin-top: 0.6rem;
+  padding: 0.85rem 1rem;
+
+  border: 1px solid rgba(249, 238, 201, 0.25);
+  border-radius: 0.65rem;
+
+  background-color: var(--vintage-grape);
+  color: var(--cornsilk);
+
+  font-family: var(--link-font);
+  font-size: 0.85rem;
+
+  cursor: pointer;
+
+  transition: background-color 0.2s ease;
+}
+
+#spotify-login-button:hover {
+  background-color: #795781;
+}
+
+/* Connection status below button */
+#spotify-connection-status {
+  margin: 0.5rem 0 0;
+
+  color: rgba(243, 238, 247, 0.7);
+
+  font-size: 0.7rem;
+  text-align: center;
+}
+
 
 .main-navigation a {
   font-size: 0.8rem;
@@ -284,9 +427,26 @@ main {
   grid-column: 1 / -1;
 }
 
+/*
+ * PROGRESS BAR BACKGROUND
+ *
+ * This is the full-length track behind the
+ * yellow progress indicator.
+ *
+ * It always remains 100% wide.
+ */
 .progress-bar {
+  width: 100%;
   height: 0.2rem;
-  background: linear-gradient(to right, var(--cornsilk) 42%, rgba(243, 238, 247, 0.35) 42%);
+
+  /* Original grey background color */
+  background-color: rgba(243, 238, 247, 0.35);
+
+  /* Prevent the yellow fill from overflowing */
+  overflow: hidden;
+
+  /* Rounded ends */
+  border-radius: 999px;
 }
 
 .time-row {
@@ -406,42 +566,522 @@ main {
   height: 2rem;
 }
 
+
+/*
+=================================================
+TABLET AND DESKTOP LAYOUT
+=================================================
+
+The mobile layout remains unchanged.
+
+At 700px and above, we:
+- Display the navigation permanently.
+- Increase spacing and typography.
+- Give the dashboard more room.
+- Improve the visual hierarchy.
+*/
+
 @media (min-width: 700px) {
+
+  /*
+  -----------------------------------------------
+  HEADER
+  -----------------------------------------------
+  */
+
   .site-header {
-    min-height: 390px;
-    padding: 2rem 4rem;
+    min-height: 440px;
+    padding: 2rem clamp(2rem, 5vw, 6rem);
   }
 
-  main {
-    padding: 2rem 4rem;
+  /*
+  Keep the logo and navigation aligned.
+  */
+  .header-inner {
+    align-items: center;
   }
 
-  .main-navigation {
-    position: absolute;
-    top: 1.4rem;
-    right: 4rem;
-    flex-direction: row;
-    margin-top: 0;
-    padding: 0;
-    background: transparent;
+  .site-logo {
+    flex-shrink: 0;
   }
 
-  .menu-button,
-  .menu-toggle {
-    display: none;
+  .logo-name {
+    font-size: 1.65rem;
   }
+
+  .logo-subtitle {
+    font-size: 0.45rem;
+  }
+
+  .main-navigation a {
+    font-size: 0.85rem;
+    transition: color 0.2s ease;
+  }
+
+  .main-navigation a:hover {
+    color: var(--lavender-mist);
+  }
+
+  /*
+  -----------------------------------------------
+  HERO SECTION
+  -----------------------------------------------
+  */
 
   .hero-content {
-    margin-top: 5rem;
+    max-width: 700px;
+    margin-top: 4.5rem;
+  }
+
+  .eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+  }
+
+  h1 {
+    max-width: 700px;
+
+    font-size: clamp(3.5rem, 5vw, 5.5rem);
+    line-height: 1.05;
+  }
+
+  .hero-copy {
+    max-width: 500px;
+    margin-top: 1.5rem;
+
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .hero-note {
+    margin-top: 0.5rem;
+    padding: 0.75rem 1.25rem;
+
+    font-size: 0.75rem;
+  }
+
+  /*
+  -----------------------------------------------
+  DECORATIVE MOON AND STARS
+  -----------------------------------------------
+  */
+
+  .moon {
+    width: 11rem;
+    height: 11rem;
+
+    top: 8rem;
+    right: 10%;
+  }
+
+  .moon::after {
+    width: 11rem;
+    height: 11rem;
+
+    top: -0.8rem;
+    left: -1.5rem;
+  }
+
+  .star-one {
+    right: 25%;
+    bottom: 5rem;
+    font-size: 1.7rem;
+  }
+
+  .star-two {
+    right: 7%;
+    bottom: 7rem;
+    font-size: 2rem;
+  }
+
+  /*
+  -----------------------------------------------
+  MAIN CONTENT
+  -----------------------------------------------
+  */
+
+  main {
+    max-width: 1500px;
+    margin: 0 auto;
+
+    padding: 3rem clamp(2rem, 5vw, 6rem);
   }
 
   .dashboard-grid {
     display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 1rem;
+
+    grid-template-columns:
+      minmax(0, 1.4fr)
+      minmax(0, 1fr);
+
+    gap: 1.5rem;
+    align-items: stretch;
   }
+
+  /*
+  -----------------------------------------------
+  DASHBOARD CARDS
+  -----------------------------------------------
+  */
 
   .dashboard-card {
     margin-bottom: 0;
+
+    padding: 2rem;
+
+    border-radius: 1.5rem;
+
+    background:
+      linear-gradient(
+        145deg,
+        rgba(97, 70, 105, 0.6),
+        rgba(97, 70, 105, 0.25)
+      );
+
+    box-shadow:
+      0 12px 35px rgba(0, 0, 0, 0.12);
+
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease;
   }
+
+  .dashboard-card:hover {
+    transform: translateY(-3px);
+
+    box-shadow:
+      0 18px 40px rgba(0, 0, 0, 0.18);
+  }
+
+  .card-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+  }
+
+  /*
+  -----------------------------------------------
+  SONG CARD
+  -----------------------------------------------
+  */
+
+  .song-card {
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .album-art {
+    width: 9rem;
+    height: 9rem;
+
+    border-radius: 1rem;
+
+    box-shadow:
+      0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+
+  .song-title {
+    font-size: clamp(1.7rem, 2.5vw, 2.5rem);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  .artist {
+    font-size: 1rem;
+    margin: 0.6rem 0;
+  }
+
+  .album {
+    font-size: 0.75rem;
+  }
+
+  .now-playing {
+    font-size: 0.65rem;
+  }
+
+  .mood-tag {
+    font-size: 0.7rem;
+    padding: 0.5rem 0.9rem;
+  }
+
+  .progress-area {
+    margin-top: 0.5rem;
+  }
+
+  .progress-bar {
+    height: 0.35rem;
+  }
+
+  .time-row {
+    font-size: 0.7rem;
+    margin-top: 0.65rem;
+  }
+
+  .pause-button {
+    width: 3.25rem;
+    height: 3.25rem;
+
+    font-size: 1.2rem;
+  }
+
+  /*
+  -----------------------------------------------
+  MOOD CARD
+  -----------------------------------------------
+  */
+
+  .mood-summary {
+    gap: 1.75rem;
+    margin: 1.5rem 0;
+  }
+
+  .mood-orbit {
+    width: 7rem;
+    height: 7rem;
+
+    font-size: 3.5rem;
+  }
+
+  .mood-name {
+    font-size: 2.2rem;
+  }
+
+  .mood-color {
+    font-size: 0.9rem;
+  }
+
+  .energy {
+    font-size: 0.75rem;
+  }
+
+  .mood-description {
+    font-size: 0.85rem;
+    line-height: 1.7;
+  }
+
+  /*
+  -----------------------------------------------
+  RECOMMENDATIONS
+  -----------------------------------------------
+  */
+
+  .recommendations {
+    margin-top: 3rem;
+  }
+
+  .recommendation-heading {
+    font-size: 2rem;
+  }
+
+  .recommendation-copy {
+    font-size: 0.9rem;
+    margin: 0.75rem 0 1.5rem;
+  }
+
+  .recommendation-card {
+    max-width: 750px;
+
+    padding: 1.25rem;
+    gap: 1.5rem;
+
+    border-radius: 1.25rem;
+  }
+
+  .recommendation-art {
+    width: 4.5rem;
+    height: 4.5rem;
+
+    font-size: 2rem;
+  }
+
+  .recommendation-title {
+    font-size: 1rem;
+  }
+
+  .recommendation-meta {
+    font-size: 0.75rem;
+  }
+
+  .play-button {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+}
+
+
+/*
+=================================================
+LARGE DESKTOP REFINEMENTS
+=================================================
+
+On larger monitors, we add a little more space
+without letting everything stretch too far.
+*/
+
+@media (min-width: 1200px) {
+
+  .site-header {
+    min-height: 500px;
+  }
+
+  .hero-content {
+    margin-top: 5.5rem;
+  }
+
+  .dashboard-grid {
+    gap: 2rem;
+  }
+
+  .dashboard-card {
+    padding: 2.5rem;
+  }
+
+  .song-card {
+    grid-template-columns: 11rem minmax(0, 1fr);
+  }
+
+  .album-art {
+    width: 11rem;
+    height: 11rem;
+  }
+
+}
+
+/*
+=================================================
+TABLET ADJUSTMENTS
+=================================================
+*/
+
+@media (min-width: 700px) and (max-width: 950px) {
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .song-card {
+    grid-template-columns: 8rem minmax(0, 1fr);
+  }
+
+  .album-art {
+    width: 8rem;
+    height: 8rem;
+  }
+
+  .moon {
+    right: 5%;
+    opacity: 0.65;
+  }
+
+}
+
+/*
+=================================================
+DESKTOP AND TABLET NAV ADJUSTMENTS
+=================================================
+*/
+@media (min-width: 700px) {
+
+  /* More breathing room around the navigation */
+  .header-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* Make the logo more prominent */
+  .logo-name {
+    font-size: 1.75rem;
+    letter-spacing: -0.04em;
+  }
+
+  .logo-subtitle {
+    font-size: 0.5rem;
+    letter-spacing: 0.08em;
+  }
+
+  /* Slightly larger desktop menu button */
+  .menu-button {
+    padding: 0.85rem 1.4rem;
+    font-size: 0.9rem;
+  }
+
+  /* Give the desktop dropdown more room */
+  .main-navigation {
+    width: 300px;
+    padding: 1rem;
+  }
+
+  /* Align hero content with the logo */
+  .hero-content {
+    width: 100%;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/*
+=================================================
+SPOTIFY ALBUM ART
+=================================================
+*/
+
+.album-art {
+  overflow: hidden;
+}
+
+.album-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/*
+=================================================
+SPOTIFY PROGRESS BAR
+=================================================
+
+The grey progress bar is the background track.
+
+The yellow progress-fill sits inside it.
+
+JavaScript changes ONLY the width of progress-fill.
+=================================================
+*/
+
+/* Yellow portion of the playback progress bar */
+.progress-fill {
+
+  /* Match the height of the parent progress bar */
+  height: 100%;
+
+  /* Initially no progress */
+  width: 0%;
+
+  /* Use LUMA's existing yellow color */
+  background-color: var(--cornsilk);
+
+  /* Rounded edges */
+  border-radius: inherit;
+
+  /* Smoothly animate changes in progress */
+  transition: width 0.5s linear;
+}
+
+
+/*
+=================================================
+SPOTIFY LOGIN BUTTON
+=================================================
+*/
+
+#spotify-login-button {
+  cursor: pointer;
+  font: inherit;
+}
+
+#spotify-connection-status {
+  font-size: 0.85rem;
+  opacity: 0.75;
 }
