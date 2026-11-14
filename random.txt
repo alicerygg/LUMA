@@ -1,0 +1,1 @@
+id, title, artist, album, alubm art url, track url, isplaying true or false.
