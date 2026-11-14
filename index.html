@@ -24,10 +24,37 @@
     <input type="checkbox" id="menu-toggle" class="menu-toggle">
 
     <nav class="main-navigation" aria-label="Main navigation">
-      <a href="#overview">Overview</a>
-      <a href="#listening-history">Listening history</a>
-      <a href="#mood-trends">Mood trends</a>
-      <a href="#settings">Settings</a>
+        <a href="#overview">Overview</a>
+        <a href="#listening-history">Listening history</a>
+        <a href="#mood-trends">Mood trends</a>
+        <a href="#settings">Settings</a>
+
+        <!--
+            SPOTIFY CONNECTION
+
+            This button will be controlled by index.js.
+
+            When disconnected:
+            "Connect Spotify"
+
+            When connected:
+            "Disconnect Spotify"
+
+            For now, connecting Spotify acts as our login.
+            Later, LUMA authentication will be handled separately.
+        -->
+            <!-- TODO: THIS HAS TO BE FIXED DESIGN WISE, ITS UGLY RIGHT NOW -->
+        <button
+            id="spotify-login-button"
+            type="button"
+        >
+            Connect Spotify
+        </button>
+
+        <!-- Displays whether the Spotify account is connected. -->
+        <p id="spotify-connection-status" role="status">
+            Spotify not connected
+        </p>
     </nav>
 
     <div class="hero-content">
@@ -45,27 +72,109 @@
   <main id="overview">
     <div class="dashboard-grid">
       <section class="dashboard-card song-card" id="listening-history">
+
         <p class="card-label">Your orbit, on repeat</p>
 
-        <div class="album-art">Beach House<br>Depression Cherry</div>
+        <!--
+            ALBUM ART
 
+            Spotify provides an image URL for the current album.
+            JavaScript will update this image automatically.
+        -->
+        <div class="album-art">
+            <img
+            id="album-art-image"
+            src=""
+            alt="Current album cover"
+            style="display: none;"
+            >
+        </div>
+
+        <!--
+            SONG INFORMATION
+
+            Each dynamic element has an ID.
+
+            index.js uses these IDs to find and update
+            the appropriate HTML elements.
+        -->
         <div class="song-details">
-          <p class="now-playing">Now playing</p>
-          <h2 class="song-title">Space Song</h2>
-          <p class="artist">Beach House</p>
-          <p class="album">Depression Cherry · 2015</p>
-          <span class="mood-tag">◌ Dreamy / reflective</span>
+
+            <p class="now-playing" id="playback-status">
+            Not connected
+            </p>
+
+            <h2 class="song-title" id="song-title">
+            Connect Spotify
+            </h2>
+
+            <p class="artist" id="song-artist">
+            Your music will appear here
+            </p>
+
+            <p class="album" id="song-album">
+            Waiting for Spotify...
+            </p>
+
+            <!--
+            Mood classification will eventually be supplied
+            by your teammate's classification system.
+            -->
+            <span class="mood-tag" id="song-mood">
+            ◌ Mood unavailable
+            </span>
+
         </div>
 
+        <!--
+            PLAYBACK PROGRESS
+
+            Spotify provides:
+            progress_ms
+            duration_ms
+
+            index.js converts these into readable timestamps
+            and updates the progress bar.
+        -->
         <div class="progress-area">
-          <div class="progress-bar"></div>
-          <div class="time-row">
-            <span>2:18</span>
-            <span>5:20</span>
-          </div>
+
+             <!-- Grey background track: always stays full width -->
+            <div
+                class="progress-bar"
+                role="progressbar"
+                aria-label="Song progress"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+            >
+
+                <!-- Yellow fill: JavaScript changes this width -->
+                <div class="progress-fill" id="song-progress"></div>
+
+            </div>
+
+            <div class="time-row">
+            <span id="song-current-time">0:00</span>
+            <span id="song-duration">0:00</span>
+            </div>
+
         </div>
 
-        <button class="pause-button" type="button" aria-label="Pause song">Ⅱ</button>
+        <!--
+            Playback controls require additional Spotify permissions.
+
+            We'll leave this disabled until playback control is implemented.
+        -->
+        <button
+            class="pause-button"
+            id="playback-button"
+            type="button"
+            aria-label="Playback control unavailable"
+            disabled
+        >
+            Ⅱ
+        </button>
+
       </section>
 
       <section class="dashboard-card mood-card" id="mood-trends">
@@ -105,5 +214,6 @@
     </section>
   </main>
 
+  <script type="module" src="./js/index.js"></script>
 </body>
 </html>

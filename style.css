@@ -284,9 +284,26 @@ main {
   grid-column: 1 / -1;
 }
 
+/*
+ * PROGRESS BAR BACKGROUND
+ *
+ * This is the full-length track behind the
+ * yellow progress indicator.
+ *
+ * It always remains 100% wide.
+ */
 .progress-bar {
+  width: 100%;
   height: 0.2rem;
-  background: linear-gradient(to right, var(--cornsilk) 42%, rgba(243, 238, 247, 0.35) 42%);
+
+  /* Original grey background color */
+  background-color: rgba(243, 238, 247, 0.35);
+
+  /* Prevent the yellow fill from overflowing */
+  overflow: hidden;
+
+  /* Rounded ends */
+  border-radius: 999px;
 }
 
 .time-row {
@@ -444,4 +461,70 @@ main {
   .dashboard-card {
     margin-bottom: 0;
   }
+}
+
+/*
+=================================================
+SPOTIFY ALBUM ART
+=================================================
+*/
+
+.album-art {
+  overflow: hidden;
+}
+
+.album-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/*
+=================================================
+SPOTIFY PROGRESS BAR
+=================================================
+
+The grey progress bar is the background track.
+
+The yellow progress-fill sits inside it.
+
+JavaScript changes ONLY the width of progress-fill.
+=================================================
+*/
+
+/* Yellow portion of the playback progress bar */
+.progress-fill {
+
+  /* Match the height of the parent progress bar */
+  height: 100%;
+
+  /* Initially no progress */
+  width: 0%;
+
+  /* Use LUMA's existing yellow color */
+  background-color: var(--cornsilk);
+
+  /* Rounded edges */
+  border-radius: inherit;
+
+  /* Smoothly animate changes in progress */
+  transition: width 0.5s linear;
+}
+
+
+/*
+=================================================
+SPOTIFY LOGIN BUTTON
+=================================================
+*/
+
+#spotify-login-button {
+  cursor: pointer;
+  font: inherit;
+}
+
+#spotify-connection-status {
+  font-size: 0.85rem;
+  opacity: 0.75;
 }
