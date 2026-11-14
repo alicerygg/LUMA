@@ -5,12 +5,27 @@ from typing import List, Optional
 
 # FastAPI creates the web server and HTTPException lets us return clear errors.
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 # Pydantic validates incoming JSON and converts it into Python objects.
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
 # This object is the FastAPI application that Uvicorn runs.
 app = FastAPI(title="Moon Trend Backend", version="0.1.0")
+
+# Allow the local frontend dev server to call this backend from the browser.
+# These origins are for local development only; production should use the
+# frontend's real domain instead.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class ListeningEvent(BaseModel):

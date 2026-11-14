@@ -19,6 +19,7 @@ import {
     onListeningEvent,
     startAllMonitoring
 } from "./spotify-monitor.js";
+import { saveCurrentTrack, saveHistoryEvent } from "./backend-api.js";
 
 const output = document.getElementById("output");
 
@@ -55,6 +56,9 @@ document.getElementById("history")?.addEventListener("click", () => run(async ()
 onSongChanged(song => {
     console.log("Current track changed:", song);
     display(song);
+    saveCurrentTrack(song).catch(error => {
+        console.error("Could not save current track to backend:", error);
+    });
 });
 
 // This event is for confirmed, timestamped history entries.
@@ -62,6 +66,9 @@ onSongChanged(song => {
 onListeningEvent(event => {
     console.log(event.isInitialImport ? "Imported history:" : "New history event:", event);
     if (event.explicit) console.log("Explicit content flag:", event.title);
+    saveHistoryEvent(event).catch(error => {
+        console.error("Could not save history event to backend:", error);
+    });
 });
 
 // OAuth redirects to callback.html. Only that page exchanges the code.

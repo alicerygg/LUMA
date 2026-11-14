@@ -1,20 +1,109 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>LUMA Spotify Test</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L.U.M.A. — Lifestyle User Mood Awareness</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <h1>LUMA Spotify Integration</h1>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="site-logo" href="#top" aria-label="L.U.M.A. home">
+        <span class="logo-name">L.U.M.A.</span>
+        <span class="logo-subtitle">Lifestyle User Mood Awareness</span>
+      </a>
 
-    <button id="login">Connect to Spotify</button>
-    <button id="current">Get Current Song</button>
-    <button id="history">Get Listening History</button>
+      <label for="menu-toggle" class="menu-button">
+        <span aria-hidden="true">☰</span>
+        <span>Menu</span>
+      </label>
+    </div>
 
-    <h2>Spotify Results</h2>
-    <pre id="output">Not connected yet.</pre>
+    <input type="checkbox" id="menu-toggle" class="menu-toggle">
 
-    <script type="module" src="./js/spotify-test.js"></script>
+    <nav class="main-navigation" aria-label="Main navigation">
+      <a href="#overview">Overview</a>
+      <a href="#listening-history">Listening history</a>
+      <a href="#mood-trends">Mood trends</a>
+      <a href="#settings">Settings</a>
+    </nav>
+
+    <div class="hero-content">
+      <p class="eyebrow">Your space to slow down</p>
+      <h1>A little pause.<br>A little moonlight.</h1>
+      <p class="hero-copy">Welcome back, Luna. Let's make room for how you feel.</p>
+      <p class="hero-note">Every phase of you belongs here.</p>
+    </div>
+
+    <div class="moon" aria-hidden="true"></div>
+    <span class="star star-one" aria-hidden="true">✦</span>
+    <span class="star star-two" aria-hidden="true">✦</span>
+  </header>
+
+  <main id="overview">
+    <div class="dashboard-grid">
+      <section class="dashboard-card song-card" id="listening-history">
+        <p class="card-label">Your orbit, on repeat</p>
+
+        <div class="album-art">Beach House<br>Depression Cherry</div>
+
+        <div class="song-details">
+          <p class="now-playing">Now playing</p>
+          <h2 class="song-title">Space Song</h2>
+          <p class="artist">Beach House</p>
+          <p class="album">Depression Cherry · 2015</p>
+          <span class="mood-tag">◌ Dreamy / reflective</span>
+        </div>
+
+        <div class="progress-area">
+          <div class="progress-bar"></div>
+          <div class="time-row">
+            <span>2:18</span>
+            <span>5:20</span>
+          </div>
+        </div>
+
+        <button class="pause-button" type="button" aria-label="Pause song">Ⅱ</button>
+      </section>
+
+      <section class="dashboard-card mood-card" id="mood-trends">
+        <p class="card-label">Current song mood</p>
+
+        <div class="mood-summary">
+          <div class="mood-orbit" aria-hidden="true">◒</div>
+
+          <div>
+            <h2 class="mood-name">Reflective</h2>
+            <p class="mood-color">Blue crescent</p>
+            <p class="energy">Low energy · soft intensity</p>
+          </div>
+        </div>
+
+        <p class="mood-description">
+          Slow tempo and spacious textures give this track a dreamy,
+          inward-looking feel.
+        </p>
+      </section>
+    </div>
+
+    <section class="recommendations">
+      <h2 class="recommendation-heading">A little lift for your orbit</h2>
+      <p class="recommendation-copy">A gentle shift from reflective to brighter.</p>
+
+      <article class="recommendation-card">
+        <div class="recommendation-art" aria-hidden="true">●</div>
+
+        <div class="recommendation-info">
+          <h3 class="recommendation-title">Put Your Records On</h3>
+          <p class="recommendation-meta">Corinne Bailey Rae · Warm &amp; easygoing</p>
+        </div>
+
+        <button class="play-button" type="button" aria-label="Preview song">▶</button>
+      </article>
+    </section>
+  </main>
+
 </body>
 </html>
