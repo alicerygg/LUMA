@@ -4,21 +4,41 @@ from statistics import mean
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
 app = FastAPI(title="Moon Trend Backend", version="0.1.0")
 
 
 class ListeningEvent(BaseModel):
-    user_id: str
-    track_id: str
+    model_config = ConfigDict(populate_by_name=True)
+
+    # The API payload uses the friend's field names; the Python names keep the
+    # trend calculation readable.
+    user_id: str = "default"
+    track_id: str = Field(validation_alias=AliasChoices("id", "track_id"))
+    title: str
     artist: str
-    played_at: datetime
-    duration_seconds: int = Field(ge=0)
-    genre: Optional[str] = None
-    energy: Optional[float] = Field(default=None, ge=0, le=1)
-    valence: Optional[float] = Field(default=None, ge=0, le=1)
+    album: Optional[str] = None
+    album_art_url: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("albumArt", "album_art_url"),
+    )
+    spotify_url: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("spotifyUrl", "spotify_url"),
+    )
+    is_playing: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("isPlaying", "is_playing"),
+    )
+    explicit: bool = False
+    played_at: datetime = Field(
+        validation_alias=AliasChoices("playedAt", "played_at"),
+    )
+    # The source payload does not provide duration. It remains available for
+    # older clients and defaults to zero for trend calculations.
+    duration_seconds: int = Field(default=0, ge=0)
 
 
 class TrendResponse(BaseModel):
@@ -48,6 +68,19 @@ def add_events(events: List[ListeningEvent]) -> dict[str, int]:
 
     for event in events:
         events_by_user.setdefault(event.user_id, []).append(event)
+
+    return {"events_received": len(events)}
+
+
+@app.post("/users/{user_id}/events", status_code=201)
+def add_user_events(user_id: str, events: List[ListeningEvent]) -> dict[str, int]:
+    """Store the friend's payload for a specific user."""
+    if not events:
+        raise HTTPException(status_code=400, detail="At least one event is required")
+
+    for event in events:
+        event.user_id = user_id
+        events_by_user.setdefault(user_id, []).append(event)
 
     return {"events_received": len(events)}
 

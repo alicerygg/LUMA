@@ -6,7 +6,7 @@ This is the first integration-ready Python service for Moon.
 
 ```powershell
 python -m pip install -r requirements.txt
-python -m uvicorn app:app --reload
+python -m uvicorn backend:app --reload
 ```
 
 Then open `http://127.0.0.1:8000/docs` for the interactive API page.
