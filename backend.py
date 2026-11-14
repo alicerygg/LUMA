@@ -16,6 +16,10 @@ class ListeningEvent(BaseModel):
     # The API payload uses the friend's field names; the Python names keep the
     # trend calculation readable.
     user_id: str = "default"
+    event_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("eventId", "event_id"),
+    )
     track_id: str = Field(validation_alias=AliasChoices("id", "track_id"))
     title: str
     artist: str
@@ -36,6 +40,10 @@ class ListeningEvent(BaseModel):
     played_at: datetime = Field(
         validation_alias=AliasChoices("playedAt", "played_at"),
     )
+    # Optional enrichment fields used by the trend calculator when available.
+    genre: Optional[str] = None
+    energy: Optional[float] = Field(default=None, ge=0, le=1)
+    valence: Optional[float] = Field(default=None, ge=0, le=1)
     # The source payload does not provide duration. It remains available for
     # older clients and defaults to zero for trend calculations.
     duration_seconds: int = Field(default=0, ge=0)
