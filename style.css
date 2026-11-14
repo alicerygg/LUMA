@@ -237,6 +237,26 @@ SPOTIFY CONNECTION
   text-align: center;
 }
 
+/* Mood prompt shown when Last.fm has no tags for a song. */
+.mood-tag-prompt {
+  margin-top: 1rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.75rem;
+}
+
+.mood-tag-prompt input {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0.4rem 0;
+  padding: 0.55rem;
+}
+
+.mood-tag-prompt button {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
 
 .main-navigation a {
   font-size: 0.8rem;
