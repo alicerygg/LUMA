@@ -55,7 +55,8 @@ import {
 
 import {
     getTrackMood,
-    saveCurrentTrack
+    saveCurrentTrack,
+    saveMoodTag
 } from "./backend-api.js";
 
 const elements = {
@@ -314,14 +315,16 @@ async function updateSongMood(song) {
     const mood = await getTrackMood(song.artist, song.title);
     const label = mood.estimated_mood ?? "Mood unavailable";
     currentMoodTrackKey = moodStorageKey(song);
+    currentMoodArtist = song.artist;
+    currentMoodTitle = song.title;
     const savedMood = localStorage.getItem(currentMoodTrackKey);
 
     if (!mood.tags.length && savedMood) {
       elements.mood.textContent = `◌ ${savedMood}`;
       elements.moodName.textContent = savedMood;
-      elements.moodColor.textContent = "Your personal mood tag";
-      elements.moodEnergy.textContent = "Added by you";
-      elements.moodDescription.textContent = "This mood was saved privately in L.U.M.A.";
+      elements.moodColor.textContent = "Community mood tag";
+      elements.moodEnergy.textContent = "Shared by a listener";
+      elements.moodDescription.textContent = "This mood tag is shared with L.U.M.A. listeners.";
       showMoodPrompt(false);
       return;
     }
@@ -416,6 +419,8 @@ functions to the existing Spotify system.
 // has an active Spotify connection.
 let spotifyConnected = false;
 let currentMoodTrackKey = null;
+let currentMoodArtist = null;
+let currentMoodTitle = null;
 
 
 function moodStorageKey(song) {
@@ -432,19 +437,26 @@ function showMoodPrompt(show) {
 }
 
 
-function saveUserMoodTag() {
+async function saveUserMoodTag() {
   const tag = elements.moodInput.value.trim();
   if (!tag || !currentMoodTrackKey) {
     elements.moodMessage.textContent = "Enter a mood first.";
     return;
   }
 
-  localStorage.setItem(currentMoodTrackKey, tag);
+  try {
+    await saveMoodTag(currentMoodArtist, currentMoodTitle, tag);
+    localStorage.setItem(currentMoodTrackKey, tag);
+  } catch (error) {
+    console.error("Could not save mood tag:", error);
+    elements.moodMessage.textContent = "Could not save this tag. Try again.";
+    return;
+  }
   elements.mood.textContent = `◌ ${tag}`;
   elements.moodName.textContent = tag;
-  elements.moodColor.textContent = "Your personal mood tag";
-  elements.moodEnergy.textContent = "Added by you";
-  elements.moodDescription.textContent = "This mood was saved privately in L.U.M.A.";
+  elements.moodColor.textContent = "Community mood tag";
+  elements.moodEnergy.textContent = "Shared by a listener";
+  elements.moodDescription.textContent = "This mood tag is shared with L.U.M.A. listeners.";
   showMoodPrompt(false);
 }
 
@@ -538,7 +550,7 @@ async function initializeHomepage() {
         handleSpotifyButtonClick
     );
 
-    elements.moodSave.addEventListener("click", saveUserMoodTag);
+    elements.moodSave.addEventListener("click", () => void saveUserMoodTag());
 
     // Check whether tokens already exist in storage.
     if (isSpotifyConnected()) {

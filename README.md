@@ -9,6 +9,11 @@ python -m pip install -r requirements.txt
 python -m uvicorn backend:app --reload
 ```
 
+Copy `.env.example` to `.env` and fill in `LASTFM_API_KEY`, `SUPABASE_URL`,
+and `SUPABASE_SECRET_KEY`. The backend fetches tags from Last.fm, estimates
+the mood, and upserts the result into the `track_moods` Supabase table.
+Keep these values server-side; do not put them in frontend JavaScript.
+
 Then open `http://127.0.0.1:8000/docs` for the interactive API page.
 
 ## Current endpoints

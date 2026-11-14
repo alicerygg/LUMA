@@ -47,3 +47,11 @@ export function getTrackMood(artist, title) {
     return backendRequest(`/tracks/mood?${params.toString()}`);
 }
 
+/** Save a private mood tag for the current user and track. */
+export function saveMoodTag(artist, title, moodTag) {
+    return backendRequest(`/users/${encodeURIComponent(USER_ID)}/mood-tags`, {
+        method: "POST",
+        body: JSON.stringify({ artist, title, mood_tag: moodTag })
+    });
+}
+

@@ -7,11 +7,18 @@ from typing import Any, List, Optional
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
+from dotenv import load_dotenv
+
 # FastAPI creates the web server and HTTPException lets us return clear errors.
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 # Pydantic validates incoming JSON and converts it into Python objects.
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
+
+
+# Load local development secrets from .env. Production deployments should
+# provide the same values through their secret/environment configuration.
+load_dotenv()
 
 # Supabase is optional during local development. Without credentials, the
 # backend continues using its temporary in-memory stores.
@@ -26,12 +33,16 @@ except ImportError:  # pragma: no cover - used only before dependencies install
 app = FastAPI(title="Moon Trend Backend", version="0.1.0")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+# Supabase now calls this the secret key (`sb_secret_...`). The legacy
+# service-role variable is accepted as a fallback for older projects.
+SUPABASE_SECRET_KEY = os.getenv("SUPABASE_SECRET_KEY") or os.getenv(
+    "SUPABASE_SERVICE_ROLE_KEY"
+)
 supabase_client: Optional[Client] = None
 
-if create_client and SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
-    # The service-role key is server-only and must never be sent to the browser.
-    supabase_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+if create_client and SUPABASE_URL and SUPABASE_SECRET_KEY:
+    # The secret key is server-only and must never be sent to the browser.
+    supabase_client = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY)
 
 # Allow the local frontend dev server to call this backend from the browser.
 # These origins are for local development only; production should use the
@@ -136,6 +147,14 @@ class TrackMoodResponse(BaseModel):
     fetched_at: datetime
 
 
+class UserMoodTag(BaseModel):
+    """A private mood label added by one user for one track."""
+
+    artist: str
+    title: str
+    mood_tag: str = Field(min_length=1, max_length=40)
+
+
 # Temporary in-memory stores.
 # These reset whenever the server restarts. Supabase can replace them later
 # without changing the public endpoint structure.
@@ -200,6 +219,12 @@ def fetch_lastfm_tags(artist: str, title: str) -> list[str]:
     })
     with urlopen(f"https://ws.audioscrobbler.com/2.0/?{query}", timeout=10) as response:
         payload = json.load(response)
+
+    # Last.fm can return HTTP 200 with an error object, so do not silently
+    # treat an invalid key or failed lookup as an empty tag list.
+    if "error" in payload:
+        message = payload.get("message", "Unknown Last.fm error")
+        raise RuntimeError(f"Last.fm error {payload['error']}: {message}")
 
     return [
         tag["name"]
@@ -398,21 +423,27 @@ def get_trend(user_id: str) -> TrendResponse:
 def get_track_mood(artist: str, title: str) -> TrackMoodResponse:
     """Return a cached mood, or ask Last.fm once for this new track."""
     cache_key = make_track_key(artist, title)
-    if supabase_is_configured():
-        result = (
-            supabase_client.table("track_moods")
-            .select("*")
-            .eq("cache_key", cache_key)
-            .limit(1)
-            .execute()
-        )
-        cached = (
-            TrackMoodResponse.model_validate({**result.data[0], "cached": True})
-            if result.data
-            else None
-        )
-    else:
-        cached = track_moods_by_key.get(cache_key)
+    try:
+        if supabase_is_configured():
+            result = (
+                supabase_client.table("track_moods")
+                .select("*")
+                .eq("cache_key", cache_key)
+                .limit(1)
+                .execute()
+            )
+            cached = (
+                TrackMoodResponse.model_validate({**result.data[0], "cached": True})
+                if result.data
+                else None
+            )
+        else:
+            cached = track_moods_by_key.get(cache_key)
+    except Exception as error:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Supabase mood lookup failed: {error}",
+        ) from error
     if cached:
         return cached.model_copy(update={"cached": True})
 
@@ -430,19 +461,92 @@ def get_track_mood(artist: str, title: str) -> TrackMoodResponse:
         cached=False,
         fetched_at=datetime.now(timezone.utc),
     )
-    if supabase_is_configured():
-        supabase_client.table("track_moods").upsert(
-            {
-                "cache_key": cache_key,
-                "artist": result.artist,
-                "title": result.title,
-                "tags": result.tags,
-                "estimated_mood": result.estimated_mood,
-                "source": result.source,
-                "fetched_at": result.fetched_at.isoformat(),
-            },
-            on_conflict="cache_key",
-        ).execute()
-    else:
-        track_moods_by_key[cache_key] = result
+    try:
+        if supabase_is_configured():
+            supabase_client.table("track_moods").upsert(
+                {
+                    "cache_key": cache_key,
+                    "artist": result.artist,
+                    "title": result.title,
+                    "tags": result.tags,
+                    "estimated_mood": result.estimated_mood,
+                    "source": result.source,
+                    "fetched_at": result.fetched_at.isoformat(),
+                },
+                on_conflict="cache_key",
+            ).execute()
+        else:
+            track_moods_by_key[cache_key] = result
+    except Exception as error:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Supabase mood save failed: {error}",
+        ) from error
     return result
+
+
+@app.post("/users/{user_id}/mood-tags", status_code=201)
+def save_user_mood_tag(user_id: str, tag: UserMoodTag) -> dict[str, str]:
+    """Add a shared community mood label to a track's tags."""
+    cache_key = make_track_key(tag.artist, tag.title)
+    mood_tag = tag.mood_tag.strip()
+    if not mood_tag:
+        raise HTTPException(status_code=400, detail="Mood tag cannot be empty")
+
+    if supabase_is_configured():
+        try:
+            existing = (
+                supabase_client.table("track_moods")
+                .select("*")
+                .eq("cache_key", cache_key)
+                .limit(1)
+                .execute()
+            )
+            current = existing.data[0] if existing.data else {}
+            tags = list(current.get("tags") or [])
+            if mood_tag.casefold() not in {item.casefold() for item in tags}:
+                tags.append(mood_tag)
+            supabase_client.table("track_moods").upsert(
+                {
+                    "cache_key": cache_key,
+                    "artist": current.get("artist", tag.artist),
+                    "title": current.get("title", tag.title),
+                    "tags": tags,
+                    "estimated_mood": current.get("estimated_mood") or estimate_mood(tags),
+                    "source": current.get("source", "community"),
+                    "fetched_at": current.get(
+                        "fetched_at", datetime.now(timezone.utc).isoformat()
+                    ),
+                },
+                on_conflict="cache_key",
+            ).execute()
+        except Exception as error:
+            raise HTTPException(
+                status_code=503,
+                detail=f"Supabase mood tag save failed: {error}",
+            ) from error
+    else:
+        current = track_moods_by_key.get(cache_key)
+        if current:
+            tags = list(current.tags)
+            if mood_tag.casefold() not in {item.casefold() for item in tags}:
+                tags.append(mood_tag)
+            track_moods_by_key[cache_key] = current.model_copy(
+                update={
+                    "tags": tags,
+                    "estimated_mood": current.estimated_mood or estimate_mood(tags),
+                }
+            )
+        else:
+            tags = [mood_tag]
+            track_moods_by_key[cache_key] = TrackMoodResponse(
+                artist=tag.artist,
+                title=tag.title,
+                tags=tags,
+                estimated_mood=estimate_mood(tags),
+                source="community",
+                cached=False,
+                fetched_at=datetime.now(timezone.utc),
+            )
+
+    return {"status": "saved", "user_id": user_id, "cache_key": cache_key}
