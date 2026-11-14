@@ -81,7 +81,11 @@ const elements = {
   moodName: document.querySelector(".mood-name"),
   moodColor: document.querySelector(".mood-color"),
   moodEnergy: document.querySelector(".energy"),
-  moodDescription: document.querySelector(".mood-description")
+  moodDescription: document.querySelector(".mood-description"),
+  moodPrompt: document.getElementById("mood-tag-prompt"),
+  moodInput: document.getElementById("custom-mood-input"),
+  moodSave: document.getElementById("save-mood-tag"),
+  moodMessage: document.getElementById("mood-tag-message")
 
 };
 
@@ -296,6 +300,8 @@ function clearSongDisplay() {
 async function updateSongMood(song) {
 
   if (!song) {
+    currentMoodTrackKey = null;
+    showMoodPrompt(false);
     elements.mood.textContent = "◌ Mood unavailable";
     elements.moodName.textContent = "Mood unavailable";
     elements.moodColor.textContent = "No mood data yet";
@@ -307,6 +313,19 @@ async function updateSongMood(song) {
   try {
     const mood = await getTrackMood(song.artist, song.title);
     const label = mood.estimated_mood ?? "Mood unavailable";
+    currentMoodTrackKey = moodStorageKey(song);
+    const savedMood = localStorage.getItem(currentMoodTrackKey);
+
+    if (!mood.tags.length && savedMood) {
+      elements.mood.textContent = `◌ ${savedMood}`;
+      elements.moodName.textContent = savedMood;
+      elements.moodColor.textContent = "Your personal mood tag";
+      elements.moodEnergy.textContent = "Added by you";
+      elements.moodDescription.textContent = "This mood was saved privately in L.U.M.A.";
+      showMoodPrompt(false);
+      return;
+    }
+
     elements.mood.textContent = `◌ ${label}`;
     elements.moodName.textContent = label;
     elements.moodColor.textContent = mood.tags.length
@@ -315,6 +334,7 @@ async function updateSongMood(song) {
     elements.moodEnergy.textContent = "Estimated from community music tags";
     elements.moodDescription.textContent =
       "This is an estimated music mood based on Last.fm community tags.";
+    showMoodPrompt(!mood.tags.length);
 
   } catch (error) {
     console.error("Could not load Last.fm mood:", error);
@@ -323,6 +343,7 @@ async function updateSongMood(song) {
     elements.moodColor.textContent = "Last.fm mood unavailable";
     elements.moodEnergy.textContent = "Try again with another song";
     elements.moodDescription.textContent = "We could not retrieve mood tags for this song.";
+    showMoodPrompt(false);
   }
 }
 
@@ -394,6 +415,38 @@ functions to the existing Spotify system.
 // Tracks whether the current browser session
 // has an active Spotify connection.
 let spotifyConnected = false;
+let currentMoodTrackKey = null;
+
+
+function moodStorageKey(song) {
+  return `luma-mood:${song.artist}:${song.title}`.toLowerCase();
+}
+
+
+function showMoodPrompt(show) {
+  elements.moodPrompt.hidden = !show;
+  if (!show) {
+    elements.moodInput.value = "";
+    elements.moodMessage.textContent = "";
+  }
+}
+
+
+function saveUserMoodTag() {
+  const tag = elements.moodInput.value.trim();
+  if (!tag || !currentMoodTrackKey) {
+    elements.moodMessage.textContent = "Enter a mood first.";
+    return;
+  }
+
+  localStorage.setItem(currentMoodTrackKey, tag);
+  elements.mood.textContent = `◌ ${tag}`;
+  elements.moodName.textContent = tag;
+  elements.moodColor.textContent = "Your personal mood tag";
+  elements.moodEnergy.textContent = "Added by you";
+  elements.moodDescription.textContent = "This mood was saved privately in L.U.M.A.";
+  showMoodPrompt(false);
+}
 
 
 /**
@@ -484,6 +537,8 @@ async function initializeHomepage() {
         "click",
         handleSpotifyButtonClick
     );
+
+    elements.moodSave.addEventListener("click", saveUserMoodTag);
 
     // Check whether tokens already exist in storage.
     if (isSpotifyConnected()) {
