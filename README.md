@@ -37,6 +37,12 @@ The frontend identifies the signed-in L.U.M.A. account. The backend uses that ac
 
 ## Setup
 
+## Reviewing the project
+
+Judges and reviewers do not need access to the Last.fm API key, the Supabase secret key, or the `.env` file. They should use the deployed frontend. The frontend sends requests to the deployed Render backend, and only that backend communicates with Last.fm and Supabase.
+
+For the deployed demo to work, the Render service must have `LASTFM_API_KEY`, `SUPABASE_URL`, and `SUPABASE_SECRET_KEY` configured as private environment variables. Do not share these values in the repository or with reviewers. Anyone cloning the repository for local development will need to provide their own environment variables.
+
 ### 1. Install backend dependencies
 
 From the project folder:
