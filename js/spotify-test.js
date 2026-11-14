@@ -56,8 +56,13 @@ async function updateLumaPage(song) {
 
     try {
         const mood = await getTrackMood(song.artist, song.title);
+        const moodLabel = mood.estimated_mood ?? "Mood unavailable";
+
+        // The main song card uses #song-mood. The dashboard mood card below
+        // uses the class-based selectors, so update both views when present.
+        document.querySelector("#song-mood")?.replaceChildren(`Mood: ${moodLabel}`);
         document.querySelector(".mood-name")?.replaceChildren(
-            mood.estimated_mood ?? "Mood unavailable"
+            moodLabel
         );
         document.querySelector(".mood-color")?.replaceChildren(
             mood.tags.length ? `Last.fm tags: ${mood.tags.slice(0, 3).join(", ")}` : "No tags found"
@@ -73,6 +78,7 @@ async function updateLumaPage(song) {
 
 // Optional chaining (?.) makes this safe on callback.html, which has no buttons.
 document.getElementById("login")?.addEventListener("click", () => run(login));
+document.getElementById("spotify-login-button")?.addEventListener("click", () => run(login));
 
 document.getElementById("current")?.addEventListener("click", () => run(async () => {
     const song = await getCurrentSong(); // API returns data; test page decides display.
