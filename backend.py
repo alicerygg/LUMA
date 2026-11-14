@@ -1,7 +1,11 @@
 # Standard-library tools used for timestamps, averages, and type hints.
 from datetime import datetime, timezone
+import json
+import os
 from statistics import mean
 from typing import List, Optional
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
 # FastAPI creates the web server and HTTPException lets us return clear errors.
 from fastapi import FastAPI, HTTPException
@@ -104,11 +108,72 @@ class TrendResponse(BaseModel):
     updated_at: datetime
 
 
+class TrackMoodResponse(BaseModel):
+    """Last.fm tags and L.U.M.A.'s estimated mood for one track."""
+
+    artist: str
+    title: str
+    tags: list[str]
+    estimated_mood: Optional[str] = None
+    source: str
+    cached: bool
+    fetched_at: datetime
+
+
 # Temporary in-memory stores.
 # These reset whenever the server restarts. Supabase can replace them later
 # without changing the public endpoint structure.
 events_by_user: dict[str, list[ListeningEvent]] = {}
 current_track_by_user: dict[str, CurrentTrack] = {}
+# Shared across users: the same song should only need one Last.fm lookup.
+track_moods_by_key: dict[str, TrackMoodResponse] = {}
+
+
+def make_track_key(artist: str, title: str) -> str:
+    """Create a consistent cache key despite capitalization or whitespace."""
+    return f"{artist.strip().casefold()}::{title.strip().casefold()}"
+
+
+def estimate_mood(tags: list[str]) -> Optional[str]:
+    """Map community tags into a small, understandable set of moods."""
+    normalized = {tag.casefold() for tag in tags}
+
+    mood_groups = {
+        "energetic": {"energetic", "energy", "party", "dance", "upbeat", "rock"},
+        "happy": {"happy", "cheerful", "joyful", "fun", "positive", "summer"},
+        "relaxed": {"relaxed", "calm", "chill", "ambient", "peaceful", "soft"},
+        "reflective": {"sad", "melancholic", "melancholy", "dark", "nostalgic", "dreamy"},
+        "romantic": {"romantic", "love", "sensual"},
+    }
+
+    # Return the first matching category in a predictable order.
+    for mood, keywords in mood_groups.items():
+        if normalized.intersection(keywords):
+            return mood
+    return None
+
+
+def fetch_lastfm_tags(artist: str, title: str) -> list[str]:
+    """Fetch public community tags from Last.fm for one track."""
+    api_key = os.getenv("LASTFM_API_KEY")
+    if not api_key:
+        raise RuntimeError("LASTFM_API_KEY is not configured")
+
+    query = urlencode({
+        "method": "track.getTopTags",
+        "artist": artist,
+        "track": title,
+        "api_key": api_key,
+        "format": "json",
+    })
+    with urlopen(f"https://ws.audioscrobbler.com/2.0/?{query}", timeout=10) as response:
+        payload = json.load(response)
+
+    return [
+        tag["name"]
+        for tag in payload.get("toptags", {}).get("tag", [])
+        if tag.get("name")
+    ]
 
 
 @app.get("/health")
@@ -256,3 +321,29 @@ def get_trend(user_id: str) -> TrendResponse:
     if not user_events:
         raise HTTPException(status_code=404, detail="No listening events found")
     return calculate_trend(user_events)
+
+
+@app.get("/tracks/mood", response_model=TrackMoodResponse)
+def get_track_mood(artist: str, title: str) -> TrackMoodResponse:
+    """Return a cached mood, or ask Last.fm once for this new track."""
+    cache_key = make_track_key(artist, title)
+    cached = track_moods_by_key.get(cache_key)
+    if cached:
+        return cached.model_copy(update={"cached": True})
+
+    try:
+        tags = fetch_lastfm_tags(artist, title)
+    except Exception as error:
+        raise HTTPException(status_code=502, detail=f"Last.fm lookup failed: {error}") from error
+
+    result = TrackMoodResponse(
+        artist=artist,
+        title=title,
+        tags=tags,
+        estimated_mood=estimate_mood(tags),
+        source="last.fm",
+        cached=False,
+        fetched_at=datetime.now(timezone.utc),
+    )
+    track_moods_by_key[cache_key] = result
+    return result

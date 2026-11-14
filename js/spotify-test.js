@@ -19,7 +19,7 @@ import {
     onListeningEvent,
     startAllMonitoring
 } from "./spotify-monitor.js";
-import { saveCurrentTrack, saveHistoryEvent } from "./backend-api.js";
+import { getTrackMood, saveCurrentTrack, saveHistoryEvent } from "./backend-api.js";
 
 const output = document.getElementById("output");
 
@@ -40,6 +40,37 @@ async function run(action) {
     }
 }
 
+/** Update the visible L.U.M.A. cards when Spotify reports a new song. */
+async function updateLumaPage(song) {
+    document.querySelector(".song-title")?.replaceChildren(song.title);
+    document.querySelector(".artist")?.replaceChildren(song.artist);
+    document.querySelector(".album")?.replaceChildren(song.album ?? "");
+
+    const albumArt = document.querySelector(".album-art");
+    if (albumArt && song.albumArt) {
+        albumArt.textContent = "";
+        albumArt.style.backgroundImage = `url("${song.albumArt}")`;
+        albumArt.style.backgroundSize = "cover";
+        albumArt.style.backgroundPosition = "center";
+    }
+
+    try {
+        const mood = await getTrackMood(song.artist, song.title);
+        document.querySelector(".mood-name")?.replaceChildren(
+            mood.estimated_mood ?? "Mood unavailable"
+        );
+        document.querySelector(".mood-color")?.replaceChildren(
+            mood.tags.length ? `Last.fm tags: ${mood.tags.slice(0, 3).join(", ")}` : "No tags found"
+        );
+        document.querySelector(".energy")?.replaceChildren("Estimated from community music tags");
+        document.querySelector(".mood-description")?.replaceChildren(
+            "This is an estimated music mood based on Last.fm community tags."
+        );
+    } catch (error) {
+        console.error("Could not load track mood:", error);
+    }
+}
+
 // Optional chaining (?.) makes this safe on callback.html, which has no buttons.
 document.getElementById("login")?.addEventListener("click", () => run(login));
 
@@ -56,6 +87,7 @@ document.getElementById("history")?.addEventListener("click", () => run(async ()
 onSongChanged(song => {
     console.log("Current track changed:", song);
     display(song);
+    void updateLumaPage(song);
     saveCurrentTrack(song).catch(error => {
         console.error("Could not save current track to backend:", error);
     });
