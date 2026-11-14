@@ -2719,3 +2719,49 @@ main {
         animation: none;
     }
 }
+
+.mood-checkin {
+    border: 1px solid var(--vintage-grape);
+    border-radius: 16px;
+    padding: 1.5rem;
+}
+
+.mood-checkin h2 {
+    color: var(--cornsilk);
+    margin-top: 0;
+}
+
+/* Ensure hidden cards stay hidden even if
+   .insight-panel has a display rule. */
+.mood-checkin[hidden] {
+    display: none !important;
+}
+
+.trusted-contact {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--vintage-grape);
+}
+
+.trusted-contact-name {
+    font-weight: bold;
+    color: var(--cornsilk);
+}
+
+.trusted-contact-button {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    background: var(--vintage-grape);
+    color: var(--cornsilk);
+    border-radius: 10px;
+    text-decoration: none;
+}
+
+.trusted-contact-button:hover {
+    background: var(--yale-blue);
+}
+
+.trusted-contact[hidden] {
+    display: none !important;
+}

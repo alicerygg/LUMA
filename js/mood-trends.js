@@ -26,6 +26,8 @@ const tabs = [...document.querySelectorAll(".period-tab")];
 const panels = [...document.querySelectorAll(".trend-panel")];
 
 const LOW_MOOD_THRESHOLD = 40;
+let userName = "friend";
+let trustedContact = null;
 
 // ==============================================
 // DATA PLACEHOLDERS
@@ -110,6 +112,40 @@ function renderPeriod(period) {
     const quote = panel.querySelector('[data-field="quote"]');
 
     const score = data.score;
+
+    // Find the check-in card in the current panel.
+    const checkinCard = panel.querySelector(".mood-checkin");
+    const checkinHeading = panel.querySelector(".checkin-heading");
+
+    // Find the trusted contact section.
+    const contactSection = panel.querySelector(".trusted-contact");
+    const contactName = panel.querySelector(".trusted-contact-name");
+    const contactButton = panel.querySelector(".trusted-contact-button");
+
+    // Only show the contact if:
+    // 1. The check-in card is visible.
+    // 2. A trusted contact with a phone number exists.
+    if (!checkinCard.hidden && trustedContact?.phone) {
+
+        contactSection.hidden = false;
+
+        contactName.textContent = trustedContact.name || "Trusted contact";
+
+        contactButton.href = `tel:${trustedContact.phone}`;
+
+    } else {
+        contactSection.hidden = true;
+    }
+
+    // Replace this with the user's display name.
+    // const userName = "friend";
+
+    // Show the card only when a valid score is below low mood threshold.
+    checkinCard.hidden = !(Number.isFinite(score) && score < LOW_MOOD_THRESHOLD);
+
+    if (!checkinCard.hidden) {
+        checkinHeading.textContent = `Are you okay, ${userName}?`;
+    }
 
     // No data available yet.
     if (score === null || !Number.isFinite(score)) {
@@ -249,7 +285,8 @@ async function loadMoodTrends() {
             if (!data) continue;
 
             updateTrend(period, {
-                score: data.score,
+                // TEST: Force daily mood below 30.
+                score: period === "daily" ? 20 : data.score,
                 topArtist: data.top_artist,
                 songsAnalyzed: data.songs_analyzed
             });
@@ -279,6 +316,7 @@ async function initializeMoodTrends() {
 
     try {
         const spotifyUser = await getSpotifyUser();
+        userName = spotifyUser.display_name || "friend";
 
         setBackendUser(spotifyUser.id);
 
