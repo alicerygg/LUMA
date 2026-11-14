@@ -86,7 +86,39 @@ export function disconnectSpotify() {
     sessionStorage.removeItem("spotify_verifier");
     sessionStorage.removeItem("spotify_state");
 
+    sessionStorage.removeItem("spotify_luma_user_id");
+
 }
+
+
+const SPOTIFY_OWNER_KEY = "spotify_luma_user_id";
+
+/**
+ * Associate the Spotify browser session with
+ * the currently authenticated L.U.M.A. account.
+ */
+export function setSpotifyOwner(userId) {
+    sessionStorage.setItem(SPOTIFY_OWNER_KEY, userId);
+}
+
+/**
+ * Check whether the Spotify session belongs to
+ * the currently authenticated L.U.M.A. account.
+ *
+ * If ownership doesn't match, remove the tokens.
+ */
+export function verifySpotifyOwner(userId) {
+    const storedOwner =
+        sessionStorage.getItem(SPOTIFY_OWNER_KEY);
+
+    if (storedOwner !== userId) {
+        disconnectSpotify();
+        return false;
+    }
+
+    return true;
+}
+
 
 /** Called when the user clicks "Connect Spotify".
  * Stores verifier/state before leaving our page for Spotify's consent screen.
