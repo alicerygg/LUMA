@@ -55,6 +55,7 @@ if create_client and SUPABASE_URL and SUPABASE_SECRET_KEY:
 FRONTEND_ORIGINS = [
     "http://127.0.0.1:5500",
     "http://localhost:5500",
+    "https://alicerygg.github.io",
 ]
 
 # Set this variable on Render to your deployed frontend origin.

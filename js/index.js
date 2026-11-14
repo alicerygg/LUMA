@@ -309,6 +309,8 @@ function updateSongMood(song, mood = null, error = null) {
 
   if (!song) {
     currentMoodTrackKey = null;
+    currentMoodArtist = null;
+    currentMoodTitle = null;
     showMoodPrompt(false);
     elements.mood.textContent = "◌ Mood unavailable";
     elements.moodName.textContent = "Mood unavailable";
@@ -318,15 +320,18 @@ function updateSongMood(song, mood = null, error = null) {
     return;
   }
 
+  // Keep the shared-tag form available for every active song, even when
+  // Last.fm already has tags or its lookup is temporarily unavailable.
+  currentMoodTrackKey = moodStorageKey(song);
+  currentMoodArtist = song.artist;
+  currentMoodTitle = song.title;
+
   try {
     if (error || !mood) {
         throw error || new Error("Mood classification unavailable");
     }
 
     const label = mood.estimated_mood ?? "Mood unavailable";
-    currentMoodTrackKey = moodStorageKey(song);
-    currentMoodArtist = song.artist;
-    currentMoodTitle = song.title;
     const savedMood = localStorage.getItem(currentMoodTrackKey);
 
     if (!mood.tags.length && savedMood) {
@@ -335,7 +340,7 @@ function updateSongMood(song, mood = null, error = null) {
       elements.moodColor.textContent = "Community mood tag";
       elements.moodEnergy.textContent = "Shared by a listener";
       elements.moodDescription.textContent = "This mood tag is shared with L.U.M.A. listeners.";
-      showMoodPrompt(false);
+      showMoodPrompt(true);
       return;
     }
 
@@ -347,7 +352,7 @@ function updateSongMood(song, mood = null, error = null) {
     elements.moodEnergy.textContent = "Estimated from community music tags";
     elements.moodDescription.textContent =
       "This is an estimated music mood based on Last.fm community tags.";
-    showMoodPrompt(!mood.tags.length);
+    showMoodPrompt(true);
 
   } catch (error) {
     console.error("Could not load Last.fm mood:", error);
@@ -356,7 +361,7 @@ function updateSongMood(song, mood = null, error = null) {
     elements.moodColor.textContent = "Last.fm mood unavailable";
     elements.moodEnergy.textContent = "Try again with another song";
     elements.moodDescription.textContent = "We could not retrieve mood tags for this song.";
-    showMoodPrompt(false);
+    showMoodPrompt(true);
   }
 }
 
