@@ -25,6 +25,8 @@ const SCOPES = [
 // All callers share one refresh operation if several requests expire together.
 let refreshPromise = null;
 
+
+
 /** Generate a random string for PKCE and OAuth state.
  * PKCE proves that the app redeeming the code initiated the login.
  * State protects against a callback from an unrelated login attempt.
